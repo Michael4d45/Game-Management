@@ -1,0 +1,1 @@
+Game Session manager. Utilizes laravel 12 with filament V3.
