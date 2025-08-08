@@ -19,7 +19,9 @@ return new class extends Migration
             $table->foreignIdFor(GameSession::class)->constrained()->cascadeOnDelete();
             $table->string('player_id')->nullable();
             $table->string('game_name');
+            $table->string('save_state_path')->nullable();
             $table->string('initiated_by');
+            $table->integer('round_number')->default(0);
             $table->timestampTz('swap_at');
             $table->timestampTz('executed_at')->nullable();
             $table->timestamps();

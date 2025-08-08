@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\SessionPlayer;
 use App\Models\User;
 
 return [
@@ -69,10 +70,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'session_players' => [
+            'driver' => 'eloquent',
+            'model' => SessionPlayer::class,
+        ],
     ],
 
     /*

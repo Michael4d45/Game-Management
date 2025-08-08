@@ -16,6 +16,7 @@ class EditGameSession extends EditRecord
     protected function getFooterWidgets(): array
     {
         return [
+            Widgets\ReverbStatusWidget::class,
             Widgets\SessionControlsWidget::class,
             Widgets\SessionStatsWidget::class,
             Widgets\SessionPlayersTable::class,

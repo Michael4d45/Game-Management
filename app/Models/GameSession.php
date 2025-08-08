@@ -15,6 +15,8 @@ class GameSession extends Model
         'user_id',
         'is_active',
         'start_at',
+        'mode',
+        'status',
     ];
 
     protected $casts = [

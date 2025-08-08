@@ -16,13 +16,15 @@ return new class extends Migration
     {
         Schema::create('session_players', function (Blueprint $table): void {
             $table->id();
-            $table->foreignIdFor(GameSession::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(GameSession::class)->nullable()->constrained()->nullOnDelete();
             $table->string('player_name');
-            $table->string('player_id')->unique();
+            $table->string('player_id')->unique(); // matches Go client ID
+            $table->string('client_version')->nullable();
             $table->integer('ping')->nullable();
             $table->boolean('is_ready')->default(false);
             $table->boolean('is_connected')->default(true);
             $table->string('current_game')->nullable();
+            $table->unsignedBigInteger('last_game_id')->nullable();
             $table->timestamp('last_seen')->nullable();
             $table->timestamps();
         });

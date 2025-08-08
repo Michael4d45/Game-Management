@@ -27,6 +27,10 @@ class GameSessionResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->unique(ignoreRecord: true),
+                Forms\Components\Select::make('mode')
+                    ->options(['sync_list' => 'Sync List', 'save_swap' => 'Save Swap'])
+                    ->default('sync_list')
+                    ->required(),
                 Forms\Components\Toggle::make('is_active')
                     ->default(false),
             ]);
@@ -40,6 +44,8 @@ class GameSessionResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('current_game')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('mode')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),

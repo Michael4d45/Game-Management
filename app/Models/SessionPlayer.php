@@ -6,9 +6,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Sanctum\HasApiTokens;
 
 class SessionPlayer extends Model
 {
+    use HasApiTokens;
+
     protected $fillable = [
         'game_session_id',
         'player_name',
