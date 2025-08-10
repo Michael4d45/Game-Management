@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('current_game')->nullable();
             $table->unsignedBigInteger('last_game_id')->nullable();
             $table->timestamp('last_seen')->nullable();
+            $table->string('timezone')->nullable();
+            $table->float('swap_offset')->nullable();
             $table->timestamps();
         });
     }

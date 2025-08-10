@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->enum('mode', ['sync_list', 'save_swap']);
-            $table->integer('swap_interval')->nullable(); // seconds
+            $table->integer('swap_interval')->default(0); // seconds
             $table->string('status')->nullable();
             $table->integer('current_round')->default(0);
             $table->boolean('is_active')->default(true);

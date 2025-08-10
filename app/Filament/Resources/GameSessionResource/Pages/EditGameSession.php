@@ -20,6 +20,7 @@ class EditGameSession extends EditRecord
             Widgets\SessionControlsWidget::class,
             Widgets\SessionStatsWidget::class,
             Widgets\SessionPlayersTable::class,
+            Widgets\SessionSwapsTable::class,
         ];
     }
 }

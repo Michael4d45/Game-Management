@@ -37,4 +37,9 @@ class DownloadROMEvent implements ShouldBroadcast
             ],
         ];
     }
+
+    public function broadcastAs(): string
+    {
+        return 'command';
+    }
 }

@@ -3,11 +3,18 @@
 declare(strict_types=1);
 
 use App\Models\GameSession;
+use App\Models\GameSwap;
 use App\Models\SessionPlayer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
+/*
+|--------------------------------------------------------------------------
+| Public Endpoints
+|--------------------------------------------------------------------------
+*/
+
+// Upload save state (System 2)
 Route::post('/upload-save', function (Request $request) {
     $request->validate([
         'file' => 'required|file',
@@ -29,22 +36,20 @@ Route::post('/upload-save', function (Request $request) {
     ]);
 });
 
+// Register a new player and return Sanctum token + Reverb info
 Route::post('/register-player', function (Request $request) {
     $request->validate([
         'player_id' => 'required|string|unique:session_players,player_id',
     ]);
 
-    // Create player record
     $player = SessionPlayer::create([
         'player_id' => $request->player_id,
         'player_name' => $request->player_id,
-        'game_session_id' => null,
     ]);
 
-    // Create forever Sanctum token
     $token = $player->createToken('forever-token')->plainTextToken;
 
-    $key = config()->string('reverb.apps.apps.0.key');
+    $key = config('reverb.apps.apps.0.key') ?? env('REVERB_APP_KEY');
 
     return response()->json([
         'player_id' => $player->player_id,
@@ -54,6 +59,7 @@ Route::post('/register-player', function (Request $request) {
     ]);
 });
 
+// Check if a session exists
 Route::get('/check-session/{name}', function ($name) {
     $exists = GameSession::where('name', $name)->exists();
     if (! $exists) {
@@ -63,6 +69,7 @@ Route::get('/check-session/{name}', function ($name) {
     return response()->json(['exists' => true]);
 });
 
+// ROM download
 Route::get('/roms/{filename}', function ($filename) {
     $path = storage_path("app/roms/{$filename}");
     if (! file_exists($path)) {
@@ -72,14 +79,87 @@ Route::get('/roms/{filename}', function ($filename) {
     return response()->download($path);
 });
 
+// Latest Lua script download
 Route::get('/scripts/latest', function () {
-    $files = collect(Storage::files('scripts'))
-        ->filter(fn ($f) => str_ends_with($f, '.lua'))
-        ->sortDesc()
-        ->values();
-    if ($files->isEmpty()) {
-        abort(404);
-    }
+    $filename = config('game.latest_lua_script');
 
-    return response()->download(storage_path('app/' . $files->first()));
+    // @phpstan-ignore encapsedStringPart.nonString
+    return response()->download(storage_path("app/scripts/$filename"));
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Endpoints (Sanctum)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum'])->group(function (): void {
+
+    // Check if token is still valid
+    Route::post('/check-token', function () {
+        return response()->json(['exists' => true]);
+    });
+
+    // Join a session
+    Route::post('/join-session/{name}', function ($name) {
+        /** @var GameSession|null $session */
+        $session = GameSession::firstWhere('name', $name);
+        if (! $session) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        /** @var SessionPlayer $player */
+        $player = auth()->user();
+        if ($player->game_session_id !== $session->id) {
+            $player->update([
+                'game_session_id' => $session->id,
+            ]);
+        }
+
+        return response()->json($player->toArray());
+    });
+
+    // Heartbeat (Phase 3)
+    Route::post('/heartbeat', function (Request $request) {
+        $request->validate([
+            'ping' => 'required|integer',
+            'current_game' => 'nullable|string',
+        ]);
+
+        /** @var SessionPlayer $player */
+        $player = auth()->user();
+        $player->update([
+            'ping' => $request->integer('ping'),
+            'current_game' => $request->string('current_game')->toString(),
+            'last_seen' => now(),
+            'is_connected' => true,
+        ]);
+
+        return response()->json(['status' => 'ok']);
+    });
+
+    // Ready state (Phase 1)
+    Route::post('/ready', function () {
+        /** @var SessionPlayer $player */
+        $player = auth()->user();
+        $player->update(['is_ready' => true]);
+
+        return response()->json(['status' => 'ok']);
+    });
+
+    // Swap complete (Phase 4)
+    Route::post('/swap-complete', function (Request $request) {
+        $request->validate([
+            'round_number' => 'required|integer',
+        ]);
+
+        /** @var SessionPlayer $player */
+        $player = auth()->user();
+
+        GameSwap::where('game_session_id', $player->game_session_id)
+            ->where('player_id', $player->player_id)
+            ->where('round_number', $request->integer('round_number'))
+            ->update(['executed_at' => now()]);
+
+        return response()->json(['status' => 'ok']);
+    });
 });

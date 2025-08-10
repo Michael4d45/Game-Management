@@ -18,6 +18,7 @@ class ReverbStatusWidget extends Widget
         $this->record = $record;
     }
 
+    #[\Override]
     protected function getViewData(): array
     {
         return [

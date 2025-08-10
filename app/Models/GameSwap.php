@@ -13,6 +13,9 @@ class GameSwap extends Model
         'game_session_id',
         'player_id',
         'game_name',
+        'save_state_path',
+        'initiated_by',
+        'round_number',
         'swap_at',
         'executed_at',
     ];

@@ -6,6 +6,10 @@ namespace App\Filament\Resources\GameSessionResource\Widgets;
 
 use App\Facades\Position;
 use App\Models\GameSession;
+use App\Models\SessionPlayer;
+use App\Services\GamePlayerBroadcast;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -24,7 +28,6 @@ class SessionPlayersTable extends BaseWidget
     #[\Override]
     public function table(Table $table): Table
     {
-        // dd(Position::timezone());
         return $table
             ->query(
                 // @phpstan-ignore argument.type
@@ -46,6 +49,61 @@ class SessionPlayersTable extends BaseWidget
                 Tables\Columns\TextColumn::make('last_seen')->dateTime(
                     timezone: Position::timezone(),
                 ),
-            ]);
+            ])
+            ->actions([
+                Tables\Actions\Action::make('kick')
+                    ->label('Kick')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (SessionPlayer $player): void {
+                        GamePlayerBroadcast::toPlayer($player)
+                            ->kick('Removed by admin');
+
+                        Notification::make()
+                            ->title("Player {$player->player_name} kicked")
+                            ->danger()
+                            ->send();
+                    }),
+
+                Tables\Actions\Action::make('message')
+                    ->label('Message')
+                    ->form([
+                        Forms\Components\TextInput::make('text')
+                            ->label('Message')
+                            ->required(),
+                    ])
+                    ->action(function (SessionPlayer $player, array $data): void {
+                        GamePlayerBroadcast::toPlayer($player)
+                            ->message($data['text']);
+
+                        Notification::make()
+                            ->title("Message sent to {$player->player_name}")
+                            ->success()
+                            ->send();
+                    }),
+
+                Tables\Actions\Action::make('force_swap')
+                    ->label('Force Swap')
+                    ->color('warning')
+                    ->form([
+                        Forms\Components\TextInput::make('game')
+                            ->label('Game Name')
+                            ->required(),
+                    ])
+                    ->action(function (SessionPlayer $player, array $data): void {
+                        GamePlayerBroadcast::toPlayer($player)
+                            ->swap(
+                                roundNumber: 999, // admin override
+                                swapAt: now()->addSeconds(3),
+                                newGame: $data['game']
+                            );
+
+                        Notification::make()
+                            ->title("Forced swap for {$player->player_name}")
+                            ->warning()
+                            ->send();
+                    }),
+            ])
+            ->poll();
     }
 }

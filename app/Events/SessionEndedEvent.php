@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Events;
 
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Queue\SerializesModels;
 
-class ServerMessageEvent implements ShouldBroadcast
+class SessionEndedEvent implements ShouldBroadcast
 {
-    public function __construct(
-        public string $playerId,
-        public string $text
-    ) {}
+    use InteractsWithSockets, SerializesModels;
+
+    public function __construct(public string $sessionName) {}
 
     /**
      * @return array<mixed>
@@ -20,19 +21,17 @@ class ServerMessageEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("session.{$this->sessionName}")];
     }
 
     /**
-     * @return array<string,mixed>
+     * @return array<mixed>
      */
     public function broadcastWith(): array
     {
         return [
-            'type' => 'message',
-            'payload' => [
-                'text' => $this->text,
-            ],
+            'type' => 'session_ended',
+            'payload' => [],
         ];
     }
 

@@ -1,16 +1,30 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <div class="flex gap-4">
-            <x-filament::button color="success" wire:click="start" :disabled="$record->start_at !== null">
+        <div class="flex flex-wrap gap-4">
+            <x-filament::button color="success" wire:click="start" :disabled="$record?->is_active">
                 Start
             </x-filament::button>
 
-            <x-filament::button color="danger" wire:click="pause" :disabled="$record->start_at === null">
+            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->is_active">
                 Pause
+            </x-filament::button>
+
+            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->is_active">
+                Trigger Swap
             </x-filament::button>
         </div>
 
-        @if ($record->start_at)
+        @if ($record?->start_at)
+            <div class="mt-2 text-sm text-gray-500">
+                Mode: <strong>{{ strtoupper($record->mode) }}</strong> |
+                Round: <strong>{{ $record->current_round }}</strong> |
+                @if ($record->swaps()->exists())
+                Next swap at:
+                <span x-data="{ swaptime: '' }" x-init="let t = new Date('{{$record->swaps()->latest()->first()?->swap_at->toIso8601String() }}');
+                swaptime = t.toLocaleTimeString();" x-text="swaptime">
+                </span>
+                @endif
+            </div>
             <div class="mt-2 text-sm text-gray-500">
                 Scheduled to start at
                 <span x-data="{ localTime: '' }" x-init="let dt = new Date('{{ $record->start_at->toIso8601String() }}');
@@ -35,7 +49,5 @@
                 Time since started: <span x-text="elapsed"></span>
             </div>
         @endif
-
-
     </x-filament::section>
 </x-filament-widgets::widget>

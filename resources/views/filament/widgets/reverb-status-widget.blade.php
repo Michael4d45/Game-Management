@@ -1,52 +1,34 @@
 <x-filament::widget>
     <x-filament::card>
-        <div 
-            x-data="{
-                status: 'connecting',
-                init() {
-                    if (!window.Echo) {
-                        console.warn('Echo is not loaded');
-                        this.status = 'Echo missing';
-                        return;
-                    }
-
-                    const channel = window.Echo.private('{{ $channel }}');
-
-                    channel.subscribed(() => {
-                        this.status = 'connected';
-                    });
-
-                    window.Echo.connector.pusher.connection.bind('state_change', (states) => {
-                        if (states.current === 'connected') {
-                            this.status = 'connected';
-                        } else if (states.current === 'connecting') {
-                            this.status = 'connecting';
-                        } else {
-                            this.status = 'disconnected';
-                        }
-                    });
-
-                    window.Echo.connector.pusher.connection.bind('error', (err) => {
-                        console.error('Reverb connection error:', err);
-                        this.status = 'disconnected';
+        <div x-data="{
+            status: 'Connecting...',
+            init() {
+                if (window.__subscribed) return;
+                window.__subscribed = true;
+                if (!window.Echo) {
+                    console.warn('Echo is not loaded');
+                    this.status = 'Echo missing';
+                    return;
+                }
+        
+                const channelName = 'player.bob';
+                console.log('Subscribing to', channelName);
+                window.Echo.private(channelName);
+                const sessionChannelName = 'session.test';
+                console.log('Subscribing to', sessionChannelName);
+                window.Echo.private(sessionChannelName);
+        
+                // Also log internal Pusher events
+                if (window.Echo.connector.pusher) {
+                    window.Echo.connector.pusher.connection.bind_global((eventName, data) => {
+                        console.log('[Pusher Event]', eventName, data);
                     });
                 }
-            }"
-            x-init="init()"
-            class="filament-widget"
-        >
+                this.status = 'Listening for events...';
+            }
+        }" x-init="init()" class="filament-widget">
             <div class="text-sm">Session #{{ $record->id }}</div>
-            <div class="font-medium">
-                Status: 
-                <span 
-                    x-text="status" 
-                    :class="{
-                        'text-green-600': status === 'connected',
-                        'text-red-600': status === 'disconnected',
-                        'text-yellow-600': status === 'connecting'
-                    }"
-                ></span>
-            </div>
+            <div class="text-xs text-gray-500" x-text="status"></div>
         </div>
     </x-filament::card>
 </x-filament::widget>

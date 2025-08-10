@@ -37,4 +37,9 @@ class DownloadLuaEvent implements ShouldBroadcast
             ],
         ];
     }
+
+    public function broadcastAs(): string
+    {
+        return 'command';
+    }
 }

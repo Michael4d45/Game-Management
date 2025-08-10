@@ -38,4 +38,9 @@ class GameSessionStatusUpdated implements ShouldBroadcast
     {
         return ['status' => $this->status];
     }
+
+    public function broadcastAs(): string
+    {
+        return 'session_status';
+    }
 }

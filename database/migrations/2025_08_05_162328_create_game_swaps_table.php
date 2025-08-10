@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('game_swaps', function (Blueprint $table): void {
             $table->id();
             $table->foreignIdFor(GameSession::class)->constrained()->cascadeOnDelete();
-            $table->string('player_id')->nullable();
+            $table->string('player_id');
             $table->string('game_name');
             $table->string('save_state_path')->nullable();
             $table->string('initiated_by');

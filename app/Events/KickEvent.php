@@ -35,4 +35,9 @@ class KickEvent implements ShouldBroadcast
             ],
         ];
     }
+
+    public function broadcastAs(): string
+    {
+        return 'command';
+    }
 }

@@ -33,6 +33,10 @@ class GameSessionResource extends Resource
                     ->required(),
                 Forms\Components\Toggle::make('is_active')
                     ->default(false),
+                Forms\Components\TextInput::make('swap_interval')
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(0),
             ]);
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Carbon\Carbon;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -17,7 +17,7 @@ class SwapEvent implements ShouldBroadcast
     public function __construct(
         public string $playerId,
         public int $roundNumber,
-        public string $swapAt, // ISO8601 UTC
+        public Carbon $swapAt,
         public string $newGame,
         public string|null $saveUrl
     ) {}
@@ -41,10 +41,15 @@ class SwapEvent implements ShouldBroadcast
             'type' => 'swap',
             'payload' => [
                 'round_number' => $this->roundNumber,
-                'swap_at' => $this->swapAt,
+                'swap_at' => $this->swapAt->toIso8601String(),
                 'new_game' => $this->newGame,
                 'save_url' => $this->saveUrl,
             ],
         ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'command';
     }
 }
