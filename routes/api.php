@@ -49,7 +49,7 @@ Route::post('/register-player', function (Request $request) {
 
     $token = $player->createToken('forever-token')->plainTextToken;
 
-    $key = config('reverb.apps.apps.0.key') ?? env('REVERB_APP_KEY');
+    $key = config('reverb.apps.apps.0.key');
 
     return response()->json([
         'player_id' => $player->player_id,
