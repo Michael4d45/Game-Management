@@ -114,8 +114,11 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
                 'game_session_id' => $session->id,
             ]);
         }
+        $session->load([
+            'games',
+        ]);
 
-        return response()->json($player->toArray());
+        return response()->json($session->toArray());
     });
 
     // Heartbeat (Phase 3)

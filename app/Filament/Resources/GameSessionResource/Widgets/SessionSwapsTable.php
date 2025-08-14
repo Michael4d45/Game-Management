@@ -8,7 +8,6 @@ use App\Facades\Position;
 use App\Models\GameSession;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Widgets\Concerns\CanPoll;
 use Filament\Widgets\TableWidget as BaseWidget;
 
 class SessionSwapsTable extends BaseWidget

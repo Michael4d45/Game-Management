@@ -15,9 +15,7 @@ class FilamentAssetProvider extends ServiceProvider
      * Register any application services.
      */
     #[\Override]
-    public function register(): void
-    {
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.

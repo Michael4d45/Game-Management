@@ -11,7 +11,7 @@ class ReverbStatusWidget extends Widget
 {
     protected static string $view = 'filament.widgets.reverb-status-widget';
 
-    public ?GameSession $record = null;
+    public GameSession|null $record = null;
 
     public function mount(GameSession $record): void
     {
@@ -23,7 +23,7 @@ class ReverbStatusWidget extends Widget
     {
         return [
             'channel' => "session.{$this->record?->id}",
-            'record'  => $this->record,
+            'record' => $this->record,
         ];
     }
 }

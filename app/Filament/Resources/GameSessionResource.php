@@ -37,6 +37,13 @@ class GameSessionResource extends Resource
                     ->numeric()
                     ->minValue(0)
                     ->default(0),
+
+                Forms\Components\Select::make('games')
+                    ->label('Games')
+                    ->multiple()
+                    ->relationship('games', 'file') // 'file' is the column to display
+                    ->preload() // loads all options immediately
+                    ->searchable(), // allows searching
             ]);
     }
 
