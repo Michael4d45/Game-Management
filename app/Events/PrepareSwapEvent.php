@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
+use Override;
 use Carbon\Carbon;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -23,7 +24,7 @@ class PrepareSwapEvent implements ShouldBroadcast
     /**
      * @return array<mixed>
      */
-    #[\Override]
+    #[Override]
     public function broadcastOn(): array
     {
         return [new PrivateChannel("player.{$this->playerId}")];

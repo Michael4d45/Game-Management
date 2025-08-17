@@ -2,43 +2,56 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\GameSessions;
 
+use Override;
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\GameSessions\Pages\ListGameSessions;
+use App\Filament\Resources\GameSessions\Pages\CreateGameSession;
+use App\Filament\Resources\GameSessions\Pages\EditGameSession;
 use App\Filament\Resources\GameSessionResource\Pages;
 use App\Models\GameSession;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\CreateAction;
 use Filament\Tables\Table;
 
 class GameSessionResource extends Resource
 {
     protected static string|null $model = GameSession::class;
 
-    protected static string|null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    #[\Override]
-    public static function form(Form $form): Form
+    #[Override]
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->required()
                     ->unique(ignoreRecord: true),
-                Forms\Components\Select::make('mode')
+                Select::make('mode')
                     ->options(['sync_list' => 'Sync List', 'save_swap' => 'Save Swap'])
                     ->default('sync_list')
                     ->required(),
-                Forms\Components\Toggle::make('is_active')
+                Toggle::make('is_active')
                     ->default(false),
-                Forms\Components\TextInput::make('swap_interval')
+                TextInput::make('swap_interval')
                     ->numeric()
                     ->minValue(0)
                     ->default(0),
 
-                Forms\Components\Select::make('games')
+                Select::make('games')
                     ->label('Games')
                     ->multiple()
                     ->relationship('games', 'file') // 'file' is the column to display
@@ -47,45 +60,45 @@ class GameSessionResource extends Resource
             ]);
     }
 
-    #[\Override]
+    #[Override]
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('current_game')
+                TextColumn::make('current_game')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('mode')
+                TextColumn::make('mode')
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('players_count')
+                TextColumn::make('players_count')
                     ->label('Players')
                     ->getStateUsing(fn ($record) => $record->players()->count()),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\Filter::make('active')
+                Filter::make('active')
                     ->query(fn ($query) => $query->where('is_active', true)),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->modal(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    #[\Override]
+    #[Override]
     public static function getRelations(): array
     {
         return [
@@ -93,13 +106,13 @@ class GameSessionResource extends Resource
         ];
     }
 
-    #[\Override]
+    #[Override]
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGameSessions::route('/'),
-            'create' => Pages\CreateGameSession::route('/create'),
-            'edit' => Pages\EditGameSession::route('/{record}/edit'),
+            'index' => ListGameSessions::route('/'),
+            'create' => CreateGameSession::route('/create'),
+            'edit' => EditGameSession::route('/{record}/edit'),
         ];
     }
 }

@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\GameSessionResource\Widgets;
+namespace App\Filament\Resources\GameSessions\Widgets;
 
+use Override;
 use App\Models\GameSession;
 use Filament\Widgets\Widget;
 
 class ReverbStatusWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.reverb-status-widget';
+    protected string $view = 'filament.widgets.reverb-status-widget';
 
     public GameSession|null $record = null;
 
@@ -18,7 +19,7 @@ class ReverbStatusWidget extends Widget
         $this->record = $record;
     }
 
-    #[\Override]
+    #[Override]
     protected function getViewData(): array
     {
         return [

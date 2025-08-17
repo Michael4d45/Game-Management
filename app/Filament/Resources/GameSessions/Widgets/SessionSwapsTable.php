@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\GameSessionResource\Widgets;
+namespace App\Filament\Resources\GameSessions\Widgets;
 
+use Override;
+use Filament\Tables\Columns\TextColumn;
 use App\Facades\Position;
 use App\Models\GameSession;
 use Filament\Tables;
@@ -21,7 +23,7 @@ class SessionSwapsTable extends BaseWidget
         $this->record = $record;
     }
 
-    #[\Override]
+    #[Override]
     public function table(Table $table): Table
     {
         return $table
@@ -31,13 +33,13 @@ class SessionSwapsTable extends BaseWidget
                 $this->record->swaps()->latest()->getQuery()
             )
             ->columns([
-                Tables\Columns\TextColumn::make('round_number')->label('Round'),
-                Tables\Columns\TextColumn::make('player_id')->label('Player'),
-                Tables\Columns\TextColumn::make('game_name')->label('Game'),
-                Tables\Columns\TextColumn::make('swap_at')->dateTime(
+                TextColumn::make('round_number')->label('Round'),
+                TextColumn::make('player_id')->label('Player'),
+                TextColumn::make('game_name')->label('Game'),
+                TextColumn::make('swap_at')->dateTime(
                     timezone: Position::timezone(),
                 ),
-                Tables\Columns\TextColumn::make('executed_at')->dateTime(
+                TextColumn::make('executed_at')->dateTime(
                     timezone: Position::timezone(),
                 ),
             ])

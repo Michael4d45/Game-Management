@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use Override;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\Vite;
@@ -14,7 +15,7 @@ class FilamentAssetProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    #[\Override]
+    #[Override]
     public function register(): void {}
 
     /**

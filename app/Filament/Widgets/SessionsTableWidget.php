@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
+use Override;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
 use App\Models\GameSession;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,22 +18,22 @@ class SessionsTableWidget extends BaseWidget
 
     protected array|int|string $columnSpan = 'full';
 
-    #[\Override]
+    #[Override]
     public function table(Table $table): Table
     {
         return $table
             ->query(GameSession::query()->latest())
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('current_game')
+                TextColumn::make('current_game')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('players_count')
+                TextColumn::make('players_count')
                     ->label('Players')
                     ->getStateUsing(fn ($record) => $record->players()->count()),
-                Tables\Columns\IconColumn::make('is_active')
+                IconColumn::make('is_active')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime(),
             ])
             ->paginated([5]);

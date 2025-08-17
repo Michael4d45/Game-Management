@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\GameSessionResource\Widgets;
+namespace App\Filament\Resources\GameSessions\Widgets;
 
 use App\Models\GameSession;
 use App\Models\SessionPlayer;
@@ -13,7 +13,7 @@ use Filament\Widgets\Widget;
 
 class SessionControlsWidget extends Widget
 {
-    protected static string $view = 'filament.resources.game-session-resource.widgets.session-controls';
+    protected string $view = 'filament.resources.game-session-resource.widgets.session-controls';
 
     public GameSession|null $record = null;
 

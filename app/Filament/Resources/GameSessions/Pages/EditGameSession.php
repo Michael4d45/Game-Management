@@ -2,9 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\GameSessionResource\Pages;
+namespace App\Filament\Resources\GameSessions\Pages;
 
-use App\Filament\Resources\GameSessionResource;
+use Override;
+use App\Filament\Resources\GameSessions\Widgets\ReverbStatusWidget;
+use App\Filament\Resources\GameSessions\Widgets\SessionControlsWidget;
+use App\Filament\Resources\GameSessions\Widgets\SessionStatsWidget;
+use App\Filament\Resources\GameSessions\Widgets\SessionPlayersTable;
+use App\Filament\Resources\GameSessions\Widgets\SessionSwapsTable;
+use App\Filament\Resources\GameSessions\GameSessionResource;
 use App\Filament\Resources\GameSessionResource\Widgets;
 use Filament\Resources\Pages\EditRecord;
 
@@ -12,15 +18,15 @@ class EditGameSession extends EditRecord
 {
     protected static string $resource = GameSessionResource::class;
 
-    #[\Override]
+    #[Override]
     protected function getFooterWidgets(): array
     {
         return [
-            Widgets\ReverbStatusWidget::class,
-            Widgets\SessionControlsWidget::class,
-            Widgets\SessionStatsWidget::class,
-            Widgets\SessionPlayersTable::class,
-            Widgets\SessionSwapsTable::class,
+            ReverbStatusWidget::class,
+            SessionControlsWidget::class,
+            SessionStatsWidget::class,
+            SessionPlayersTable::class,
+            SessionSwapsTable::class,
         ];
     }
 }

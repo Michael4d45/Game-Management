@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\GameSessionResource\Widgets;
+namespace App\Filament\Resources\GameSessions\Widgets;
 
+use Override;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use App\Facades\Position;
 use App\Models\GameSession;
 use App\Models\SessionPlayer;
@@ -25,7 +30,7 @@ class SessionPlayersTable extends BaseWidget
         $this->record = $record;
     }
 
-    #[\Override]
+    #[Override]
     public function table(Table $table): Table
     {
         return $table
@@ -35,23 +40,23 @@ class SessionPlayersTable extends BaseWidget
                 $this->record->players()->getQuery()
             )
             ->columns([
-                Tables\Columns\TextColumn::make('player_name'),
-                Tables\Columns\TextColumn::make('current_game'),
-                Tables\Columns\TextColumn::make('ping'),
-                Tables\Columns\IconColumn::make('is_ready')
+                TextColumn::make('player_name'),
+                TextColumn::make('current_game'),
+                TextColumn::make('ping'),
+                IconColumn::make('is_ready')
                     ->boolean()
                     ->label('Ready')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\IconColumn::make('is_connected')
+                IconColumn::make('is_connected')
                     ->boolean()
                     ->label('Connected'),
-                Tables\Columns\TextColumn::make('last_seen')->dateTime(
+                TextColumn::make('last_seen')->dateTime(
                     timezone: Position::timezone(),
                 ),
             ])
-            ->actions([
-                Tables\Actions\Action::make('kick')
+            ->recordActions([
+                Action::make('kick')
                     ->label('Kick')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -65,10 +70,10 @@ class SessionPlayersTable extends BaseWidget
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('message')
+                Action::make('message')
                     ->label('Message')
-                    ->form([
-                        Forms\Components\TextInput::make('text')
+                    ->schema([
+                        TextInput::make('text')
                             ->label('Message')
                             ->required(),
                     ])
@@ -82,11 +87,11 @@ class SessionPlayersTable extends BaseWidget
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('force_swap')
+                Action::make('force_swap')
                     ->label('Force Swap')
                     ->color('warning')
-                    ->form([
-                        Forms\Components\TextInput::make('game')
+                    ->schema([
+                        TextInput::make('game')
                             ->label('Game Name')
                             ->required(),
                     ])
