@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Override;
 use App\Models\GameSession;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -24,7 +23,7 @@ class GameSessionStatusUpdated implements ShouldBroadcast
         $this->status = $status;
     }
 
-    #[Override]
+    #[\Override]
     public function broadcastOn(): PrivateChannel
     {
         // NOTE: PrivateChannel name *should not* include the "private-" prefix;

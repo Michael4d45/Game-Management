@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Games;
 
-use Override;
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\Games\Pages\ListGames;
 use App\Filament\Resources\Games\Pages\CreateGame;
 use App\Filament\Resources\Games\Pages\EditGame;
-use App\Filament\Resources\GameResource\Pages;
+use App\Filament\Resources\Games\Pages\ListGames;
 use App\Models\Game;
-use Filament\Forms;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -27,9 +23,9 @@ class GameResource extends Resource
 {
     protected static string|null $model = Game::class;
 
-    // protected static string|null $navigationIcon = 'heroicon-o-collection';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-puzzle-piece';
 
-    #[Override]
+    #[\Override]
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -59,7 +55,7 @@ class GameResource extends Resource
             ]);
     }
 
-    #[Override]
+    #[\Override]
     public static function table(Table $table): Table
     {
         return $table
@@ -78,7 +74,7 @@ class GameResource extends Resource
             ]);
     }
 
-    #[Override]
+    #[\Override]
     public static function getPages(): array
     {
         return [

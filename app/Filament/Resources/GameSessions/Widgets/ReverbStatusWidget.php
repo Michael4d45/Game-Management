@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions\Widgets;
 
-use Override;
 use App\Models\GameSession;
 use Filament\Widgets\Widget;
 
@@ -19,7 +18,7 @@ class ReverbStatusWidget extends Widget
         $this->record = $record;
     }
 
-    #[Override]
+    #[\Override]
     protected function getViewData(): array
     {
         return [

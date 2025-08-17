@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Override;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -19,7 +18,7 @@ class StartGameEvent implements ShouldBroadcast
     /**
      * @return array<mixed>
      */
-    #[Override]
+    #[\Override]
     public function broadcastOn(): array
     {
         return [new PrivateChannel("session.{$this->sessionName}")];

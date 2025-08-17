@@ -4,35 +4,31 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions;
 
-use Override;
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\CreateAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\GameSessions\Pages\ListGameSessions;
 use App\Filament\Resources\GameSessions\Pages\CreateGameSession;
 use App\Filament\Resources\GameSessions\Pages\EditGameSession;
-use App\Filament\Resources\GameSessionResource\Pages;
+use App\Filament\Resources\GameSessions\Pages\ListGameSessions;
 use App\Models\GameSession;
-use Filament\Forms;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 
 class GameSessionResource extends Resource
 {
     protected static string|null $model = GameSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    #[Override]
+    #[\Override]
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -60,7 +56,7 @@ class GameSessionResource extends Resource
             ]);
     }
 
-    #[Override]
+    #[\Override]
     public static function table(Table $table): Table
     {
         return $table
@@ -98,7 +94,7 @@ class GameSessionResource extends Resource
             ]);
     }
 
-    #[Override]
+    #[\Override]
     public static function getRelations(): array
     {
         return [
@@ -106,7 +102,7 @@ class GameSessionResource extends Resource
         ];
     }
 
-    #[Override]
+    #[\Override]
     public static function getPages(): array
     {
         return [

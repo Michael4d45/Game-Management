@@ -55,7 +55,6 @@ Route::post('/register-player', function (Request $request) {
         'player_id' => $player->player_id,
         'bearer_token' => $token,
         'reverb_app_key' => $key,
-        'reverb_auth_url' => url('/broadcasting/auth'),
     ]);
 });
 

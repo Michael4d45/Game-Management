@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions\Widgets;
 
-use Override;
-use Filament\Tables\Columns\TextColumn;
 use App\Facades\Position;
 use App\Models\GameSession;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 
@@ -23,7 +21,7 @@ class SessionSwapsTable extends BaseWidget
         $this->record = $record;
     }
 
-    #[Override]
+    #[\Override]
     public function table(Table $table): Table
     {
         return $table

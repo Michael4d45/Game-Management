@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
-use Override;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use App\Models\GameSession;
-use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 
@@ -18,7 +16,7 @@ class SessionsTableWidget extends BaseWidget
 
     protected array|int|string $columnSpan = 'full';
 
-    #[Override]
+    #[\Override]
     public function table(Table $table): Table
     {
         return $table
