@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Jobs\MarkUserDisconnected;
 use App\Models\GameSession;
 use App\Models\GameSwap;
 use App\Models\SessionPlayer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -129,12 +131,19 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
 
         /** @var SessionPlayer $player */
         $player = auth()->user();
+
         $player->update([
             'ping' => $request->integer('ping'),
             'current_game' => $request->string('current_game')->toString(),
             'last_seen' => now(),
             'is_connected' => true,
         ]);
+
+        // Save last heartbeat timestamp
+        Cache::put("heartbeat:{$player->id}", now(), 60);
+
+        // Dispatch disconnect job in 30 seconds
+        MarkUserDisconnected::dispatch($player->id)->delay(now()->addSeconds(12));
 
         return response()->json(['status' => 'ok']);
     });
