@@ -20,16 +20,16 @@ use Illuminate\Support\Facades\Route;
 Route::post('/upload-save', function (Request $request) {
     $request->validate([
         'file' => 'required|file',
-        'player_id' => 'required|string',
+        'name' => 'required|string',
         'session_id' => 'required|string',
     ]);
 
     $sessionId = $request->string('session_id')->toString();
-    $playerId = $request->string('player_id')->toString();
+    $name = $request->string('name')->toString();
 
     $path = $request->file('file')->storeAs(
         "saves/$sessionId",
-        "$playerId.state"
+        "$name.state"
     );
 
     return response()->json([
@@ -41,12 +41,11 @@ Route::post('/upload-save', function (Request $request) {
 // Register a new player and return Sanctum token + Reverb info
 Route::post('/register-player', function (Request $request) {
     $request->validate([
-        'player_id' => 'required|string|unique:session_players,player_id',
+        'name' => 'required|string|unique:session_players,name',
     ]);
 
     $player = SessionPlayer::create([
-        'player_id' => $request->player_id,
-        'player_name' => $request->player_id,
+        'name' => $request->name,
     ]);
 
     $token = $player->createToken('forever-token')->plainTextToken;
@@ -54,7 +53,6 @@ Route::post('/register-player', function (Request $request) {
     $key = config('reverb.apps.apps.0.key');
 
     return response()->json([
-        'player_id' => $player->player_id,
         'bearer_token' => $token,
         'reverb_app_key' => $key,
     ]);
@@ -72,7 +70,8 @@ Route::get('/check-session/{name}', function ($name) {
 
 // ROM download
 Route::get('/roms/{filename}', function ($filename) {
-    $path = storage_path("app/roms/{$filename}");
+    $path = config()->string('game.files_path') . "/" . $filename;
+    logger('attempting to download: '.$filename);
     if (! file_exists($path)) {
         abort(404);
     }
@@ -118,6 +117,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         $session->load([
             'games',
         ]);
+        logger($player->name . ' joined session ' . $session->name, ['session' => $session->toArray()]);
 
         return response()->json($session->toArray());
     });
@@ -140,10 +140,10 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         ]);
 
         // Save last heartbeat timestamp
-        Cache::put("heartbeat:{$player->id}", now(), 60);
+        Cache::put("heartbeat:{$player->name}", now(), 60);
 
         // Dispatch disconnect job in 30 seconds
-        MarkUserDisconnected::dispatch($player->id)->delay(now()->addSeconds(12));
+        MarkUserDisconnected::dispatch($player->name)->delay(now()->addSeconds(12));
 
         return response()->json(['status' => 'ok']);
     });
@@ -167,7 +167,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         $player = auth()->user();
 
         GameSwap::where('game_session_id', $player->game_session_id)
-            ->where('player_id', $player->player_id)
+            ->where('session_player_name', $player->name)
             ->where('round_number', $request->integer('round_number'))
             ->update(['executed_at' => now()]);
 

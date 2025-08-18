@@ -14,14 +14,12 @@ class GameSession extends Model
     protected $fillable = [
         'name',
         'user_id',
-        'is_active',
         'start_at',
         'mode',
         'status',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'start_at' => 'datetime',
     ];
 

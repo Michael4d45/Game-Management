@@ -38,7 +38,7 @@ class SessionPlayersTable extends BaseWidget
                 $this->record->players()->getQuery()
             )
             ->columns([
-                TextColumn::make('player_name'),
+                TextColumn::make('name'),
                 TextColumn::make('current_game'),
                 TextColumn::make('ping'),
                 IconColumn::make('is_ready')
@@ -63,7 +63,7 @@ class SessionPlayersTable extends BaseWidget
                             ->kick('Removed by admin');
 
                         Notification::make()
-                            ->title("Player {$player->player_name} kicked")
+                            ->title("Player {$player->name} kicked")
                             ->danger()
                             ->send();
                     }),
@@ -80,7 +80,7 @@ class SessionPlayersTable extends BaseWidget
                             ->message($data['text']);
 
                         Notification::make()
-                            ->title("Message sent to {$player->player_name}")
+                            ->title("Message sent to {$player->name}")
                             ->success()
                             ->send();
                     }),
@@ -102,7 +102,7 @@ class SessionPlayersTable extends BaseWidget
                             );
 
                         Notification::make()
-                            ->title("Forced swap for {$player->player_name}")
+                            ->title("Forced swap for {$player->name}")
                             ->warning()
                             ->send();
                     }),

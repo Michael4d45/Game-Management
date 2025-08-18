@@ -14,8 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('games', function (Blueprint $table): void {
-            $table->id();
-            $table->string('file')->unique();
+            $table->string('file')->unique()->primary();
             $table->timestamps();
         });
     }

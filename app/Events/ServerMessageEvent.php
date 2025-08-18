@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 class ServerMessageEvent implements ShouldBroadcast
 {
     public function __construct(
-        public string $playerId,
+        public string $playerName,
         public string $text
     ) {}
 
@@ -20,7 +20,7 @@ class ServerMessageEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("player.{$this->playerName}")];
     }
 
     /**

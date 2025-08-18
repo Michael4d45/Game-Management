@@ -29,8 +29,6 @@ class SessionsTableWidget extends BaseWidget
                 TextColumn::make('players_count')
                     ->label('Players')
                     ->getStateUsing(fn ($record) => $record->players()->count()),
-                IconColumn::make('is_active')
-                    ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime(),
             ])

@@ -17,13 +17,13 @@ class MarkUserDisconnected implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        public int $playerId,
+        public string $playerName,
     ) {}
 
     public function handle(): void
     {
         // Only disconnect if no newer heartbeat has been received
-        $lastHeartbeat = Cache::get("heartbeat:{$this->playerId}");
+        $lastHeartbeat = Cache::get("heartbeat:{$this->playerName}");
 
         // @phpstan-ignore argument.type
         if ($lastHeartbeat && now()->diffInSeconds($lastHeartbeat, true) < 12) {
@@ -31,7 +31,7 @@ class MarkUserDisconnected implements ShouldQueue
             return;
         }
 
-        $player = SessionPlayer::find($this->playerId);
+        $player = SessionPlayer::find($this->playerName);
         if ($player) {
             $player->update(['is_connected' => false]);
         }

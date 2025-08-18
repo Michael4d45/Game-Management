@@ -32,7 +32,7 @@ class SessionSwapsTable extends BaseWidget
             )
             ->columns([
                 TextColumn::make('round_number')->label('Round'),
-                TextColumn::make('player_id')->label('Player'),
+                TextColumn::make('session_player_name')->label('Player'),
                 TextColumn::make('game_name')->label('Game'),
                 TextColumn::make('swap_at')->dateTime(
                     timezone: Position::timezone(),

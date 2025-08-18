@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 class DownloadROMEvent implements ShouldBroadcast
 {
     public function __construct(
-        public string $playerId,
+        public string $playerName,
         public string $romName,
         public string $romUrl
     ) {}
@@ -21,7 +21,7 @@ class DownloadROMEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("player.{$this->playerName}")];
     }
 
     /**

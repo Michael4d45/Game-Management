@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 class DownloadLuaEvent implements ShouldBroadcast
 {
     public function __construct(
-        public string $playerId,
+        public string $playerName,
         public string $luaVersion,
         public string $luaUrl
     ) {}
@@ -21,7 +21,7 @@ class DownloadLuaEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("player.{$this->playerName}")];
     }
 
     /**

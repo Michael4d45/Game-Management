@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Game;
 use App\Models\GameSession;
+use App\Models\SessionPlayer;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,8 +19,8 @@ return new class extends Migration
         Schema::create('game_swaps', function (Blueprint $table): void {
             $table->id();
             $table->foreignIdFor(GameSession::class)->constrained()->cascadeOnDelete();
-            $table->string('player_id');
-            $table->string('game_name');
+            $table->foreignIdFor(SessionPlayer::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Game::class);
             $table->string('save_state_path')->nullable();
             $table->string('initiated_by');
             $table->integer('round_number')->default(0);

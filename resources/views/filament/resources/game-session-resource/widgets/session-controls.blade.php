@@ -1,15 +1,15 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <div class="flex flex-wrap gap-4">
-            <x-filament::button color="success" wire:click="start" :disabled="$record?->is_active">
+            <x-filament::button color="success" wire:click="start" :disabled="$record?->start_at">
                 Start
             </x-filament::button>
 
-            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->is_active">
+            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->start_at">
                 Pause
             </x-filament::button>
 
-            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->is_active">
+            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->start_at">
                 Trigger Swap
             </x-filament::button>
         </div>

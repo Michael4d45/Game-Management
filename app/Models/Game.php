@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Game extends Model
 {
+    protected $primaryKey = 'file';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
     protected $fillable = ['file'];
 
     /**

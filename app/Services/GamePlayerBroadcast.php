@@ -10,6 +10,7 @@ use App\Events\KickEvent;
 use App\Events\PrepareSwapEvent;
 use App\Events\ServerMessageEvent;
 use App\Events\SwapEvent;
+use App\Models\Game;
 use App\Models\GameSwap;
 use App\Models\SessionPlayer;
 use Carbon\Carbon;
@@ -26,15 +27,15 @@ class GamePlayerBroadcast
         return $instance;
     }
 
-    public function swap(int $roundNumber, Carbon $swapAt, string $newGame, string|null $saveUrl = null): void
+    public function swap(int $roundNumber, Carbon $swapAt, Game $newGame, string|null $saveUrl = null): void
     {
         if (! $this->player) {
             return;
         }
         GameSwap::create([
             'game_session_id' => $this->player->game_session_id,
-            'player_id' => $this->player->player_id,
-            'game_name' => $newGame,
+            'session_player_name' => $this->player->name,
+            'game_file' => $newGame->file,
             'save_state_path' => $saveUrl,
             'initiated_by' => auth()->id() ?? 'system',
             'round_number' => $roundNumber,
@@ -42,10 +43,10 @@ class GamePlayerBroadcast
         ]);
 
         broadcast(new SwapEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             roundNumber: $roundNumber,
             swapAt: $swapAt,
-            newGame: $newGame,
+            newGame: $newGame->file,
             saveUrl: $saveUrl
         ));
     }
@@ -56,7 +57,7 @@ class GamePlayerBroadcast
             return;
         }
         broadcast(new DownloadROMEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             romName: $romName,
             romUrl: $romUrl
         ));
@@ -68,7 +69,7 @@ class GamePlayerBroadcast
             return;
         }
         broadcast(new DownloadLuaEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             luaVersion: $luaVersion,
             luaUrl: $luaUrl
         ));
@@ -80,7 +81,7 @@ class GamePlayerBroadcast
             return;
         }
         broadcast(new ServerMessageEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             text: $text
         ));
     }
@@ -94,7 +95,7 @@ class GamePlayerBroadcast
             'game_session_id' => null,
         ]);
         broadcast(new KickEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             reason: $reason
         ));
     }
@@ -105,7 +106,7 @@ class GamePlayerBroadcast
             return;
         }
         broadcast(new PrepareSwapEvent(
-            playerId: $this->player->player_id,
+            playerName: $this->player->name,
             roundNumber: $roundNumber,
             uploadBy: $uploadBy
         ));

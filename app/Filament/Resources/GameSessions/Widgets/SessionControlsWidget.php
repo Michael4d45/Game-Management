@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions\Widgets;
 
+use App\Models\Game;
 use App\Models\GameSession;
 use App\Models\SessionPlayer;
 use App\Services\GamePlayerBroadcast;
@@ -30,7 +31,6 @@ class SessionControlsWidget extends Widget
 
         $this->record->update([
             'start_at' => now()->addSeconds(3),
-            'is_active' => true,
         ]);
 
         GameSessionBroadcast::toSession($this->record)->start();
@@ -49,7 +49,6 @@ class SessionControlsWidget extends Widget
 
         $this->record->update([
             'start_at' => null,
-            'is_active' => false,
         ]);
 
         GameSessionBroadcast::toSession($this->record)->pause();
@@ -98,14 +97,14 @@ class SessionControlsWidget extends Widget
             ->send();
     }
 
-    protected function pickNextGame(): string
+    protected function pickNextGame(): Game
     {
-        return 'mario.nes';
+        return Game::firstOrFail();
     }
 
-    protected function pickNextGameForPlayer(SessionPlayer $player): string
+    protected function pickNextGameForPlayer(SessionPlayer $player): Game
     {
-        return 'zelda.nes';
+        return Game::firstOrFail();
     }
 
     protected function assignSaveForPlayer(SessionPlayer $player): string|null
@@ -114,6 +113,6 @@ class SessionControlsWidget extends Widget
             return null;
         }
 
-        return url("/saves/{$this->record->id}/{$player->player_id}.state");
+        return url("/saves/{$this->record->id}/{$player->name}.state");
     }
 }

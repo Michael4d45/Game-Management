@@ -15,10 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('session_players', function (Blueprint $table): void {
-            $table->id();
+            $table->string('name')->unique()->primary();
             $table->foreignIdFor(GameSession::class)->nullable()->constrained()->nullOnDelete();
-            $table->string('player_name');
-            $table->string('player_id')->unique(); // matches Go client ID
             $table->string('client_version')->nullable();
             $table->integer('ping')->nullable();
             $table->boolean('is_ready')->default(false);

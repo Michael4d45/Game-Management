@@ -15,7 +15,7 @@ class SwapEvent implements ShouldBroadcast
     use InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public string $playerId,
+        public string $playerName,
         public int $roundNumber,
         public Carbon $swapAt,
         public string $newGame,
@@ -29,7 +29,7 @@ class SwapEvent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         // Each player gets their own private channel
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("player.{$this->playerName}")];
     }
 
     /**

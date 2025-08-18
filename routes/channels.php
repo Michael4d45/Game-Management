@@ -13,7 +13,7 @@ Broadcast::channel('App.Models.{model}.{id}', function ($user, $model, $id) {
     return true;
 });
 
-Broadcast::channel('player.{playerId}', function ($user, $playerId) {
+Broadcast::channel('player.{playerName}', function ($user, $playerName) {
     return true;
 });
 

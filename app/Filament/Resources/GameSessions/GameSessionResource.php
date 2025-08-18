@@ -40,8 +40,6 @@ class GameSessionResource extends Resource
                     ->options(['sync_list' => 'Sync List', 'save_swap' => 'Save Swap'])
                     ->default('sync_list')
                     ->required(),
-                Toggle::make('is_active')
-                    ->default(false),
                 TextInput::make('swap_interval')
                     ->numeric()
                     ->minValue(0)
@@ -50,9 +48,9 @@ class GameSessionResource extends Resource
                 Select::make('games')
                     ->label('Games')
                     ->multiple()
-                    ->relationship('games', 'file') // 'file' is the column to display
-                    ->preload() // loads all options immediately
-                    ->searchable(), // allows searching
+                    ->relationship('games', 'file')
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 
@@ -67,18 +65,12 @@ class GameSessionResource extends Resource
                     ->searchable(),
                 TextColumn::make('mode')
                     ->searchable(),
-                IconColumn::make('is_active')
-                    ->boolean(),
                 TextColumn::make('players_count')
                     ->label('Players')
                     ->getStateUsing(fn ($record) => $record->players()->count()),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
-            ])
-            ->filters([
-                Filter::make('active')
-                    ->query(fn ($query) => $query->where('is_active', true)),
             ])
             ->headerActions([
                 CreateAction::make()

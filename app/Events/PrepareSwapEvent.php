@@ -15,7 +15,7 @@ class PrepareSwapEvent implements ShouldBroadcast
     use InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public string $playerId,
+        public string $playerName,
         public int $roundNumber,
         public Carbon $uploadBy
     ) {}
@@ -26,7 +26,7 @@ class PrepareSwapEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("player.{$this->playerId}")];
+        return [new PrivateChannel("player.{$this->playerName}")];
     }
 
     /**

@@ -15,9 +15,6 @@ class ActiveSessionsWidget extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Active Sessions', GameSession::where('is_active', true)->count())
-                ->description('Currently running')
-                ->color('success'),
             Stat::make('Total Players', SessionPlayer::where('is_connected', true)->count())
                 ->description('Connected players')
                 ->color('primary'),

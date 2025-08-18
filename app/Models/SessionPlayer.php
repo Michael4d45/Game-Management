@@ -12,10 +12,15 @@ class SessionPlayer extends Authenticatable
 {
     use HasApiTokens;
 
+    protected $primaryKey = 'name';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
     protected $fillable = [
         'game_session_id',
-        'player_name',
-        'player_id',
+        'name',
         'ping',
         'is_ready',
         'is_connected',
