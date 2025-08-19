@@ -20,7 +20,8 @@ use Illuminate\Support\Carbon;
  * @property string $session_player_name
  * @property int $game_session_id
  * @property int $id
- * @property-read GameSession $session
+ * @property-read GameSession $gameSession
+ * @property-read SessionPlayer $sessionPlayer
  */
 class GameSwap extends Model
 {
@@ -43,8 +44,16 @@ class GameSwap extends Model
     /**
      * @return BelongsTo<GameSession,$this>
      */
-    public function session()
+    public function gameSession()
     {
         return $this->belongsTo(GameSession::class);
+    }
+
+    /**
+     * @return BelongsTo<SessionPlayer,$this>
+     */
+    public function sessionPlayer()
+    {
+        return $this->belongsTo(SessionPlayer::class);
     }
 }

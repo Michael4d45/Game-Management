@@ -41,7 +41,7 @@ class SwapEvent implements ShouldBroadcast
             'type' => 'swap',
             'payload' => [
                 'round_number' => $this->roundNumber,
-                'swap_at' => $this->swapAt->toIso8601String(),
+                'swap_at' => $this->swapAt->getTimestamp(),
                 'new_game' => $this->newGame,
                 'save_url' => $this->saveUrl,
             ],
