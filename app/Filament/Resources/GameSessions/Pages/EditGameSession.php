@@ -7,6 +7,7 @@ namespace App\Filament\Resources\GameSessions\Pages;
 use App\Filament\Resources\GameSessions\GameSessionResource;
 use App\Filament\Resources\GameSessions\Widgets\ReverbStatusWidget;
 use App\Filament\Resources\GameSessions\Widgets\SessionControlsWidget;
+use App\Filament\Resources\GameSessions\Widgets\SessionGamesTable;
 use App\Filament\Resources\GameSessions\Widgets\SessionPlayersTable;
 use App\Filament\Resources\GameSessions\Widgets\SessionStatsWidget;
 use App\Filament\Resources\GameSessions\Widgets\SessionSwapsTable;
@@ -24,6 +25,7 @@ class EditGameSession extends EditRecord
             SessionControlsWidget::class,
             SessionStatsWidget::class,
             SessionPlayersTable::class,
+            SessionGamesTable::class,
             SessionSwapsTable::class,
         ];
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions;
 
+use App\Enums\GameSessionMode;
 use App\Filament\Resources\GameSessions\Pages\CreateGameSession;
 use App\Filament\Resources\GameSessions\Pages\EditGameSession;
 use App\Filament\Resources\GameSessions\Pages\ListGameSessions;
@@ -14,12 +15,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 
 class GameSessionResource extends Resource
@@ -37,8 +35,8 @@ class GameSessionResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true),
                 Select::make('mode')
-                    ->options(['sync_list' => 'Sync List', 'save_swap' => 'Save Swap'])
-                    ->default('sync_list')
+                    ->options(GameSessionMode::options())
+                    ->default(GameSessionMode::SyncList->value)
                     ->required(),
                 TextInput::make('swap_interval')
                     ->numeric()
@@ -60,8 +58,6 @@ class GameSessionResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('current_game')
                     ->searchable(),
                 TextColumn::make('mode')
                     ->searchable(),

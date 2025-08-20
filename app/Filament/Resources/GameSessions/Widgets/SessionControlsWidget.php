@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions\Widgets;
 
+use App\Enums\GameSessionMode;
 use App\Models\Game;
 use App\Models\GameSession;
 use App\Models\SessionPlayer;
@@ -71,23 +72,26 @@ class SessionControlsWidget extends Widget
         $this->record->update(['current_round' => $round]);
 
         foreach ($this->record->players as $player) {
-            if ($this->record->mode === 'sync_list') {
-                GamePlayerBroadcast::toPlayer($player)
-                    ->swap(
-                        roundNumber: $round,
-                        swapAt: $swapAt,
-                        newGame: $this->pickNextGame(),
-                        saveUrl: null
-                    );
-            } elseif ($this->record->mode === 'save_swap') {
-                $saveUrl = $this->assignSaveForPlayer($player);
-                GamePlayerBroadcast::toPlayer($player)
-                    ->swap(
-                        roundNumber: $round,
-                        swapAt: $swapAt,
-                        newGame: $this->pickNextGameForPlayer($player),
-                        saveUrl: $saveUrl
-                    );
+            switch ($this->record->mode) {
+                case GameSessionMode::SyncList:
+                    GamePlayerBroadcast::toPlayer($player)
+                        ->swap(
+                            roundNumber: $round,
+                            swapAt: $swapAt,
+                            newGame: $this->pickNextGame(),
+                            saveUrl: null
+                        );
+                    break;
+                case GameSessionMode::SaveSwap:
+                    $saveUrl = $this->assignSaveForPlayer($player);
+                    GamePlayerBroadcast::toPlayer($player)
+                        ->swap(
+                            roundNumber: $round,
+                            swapAt: $swapAt,
+                            newGame: $this->pickNextGameForPlayer($player),
+                            saveUrl: $saveUrl
+                        );
+                    break;
             }
         }
 

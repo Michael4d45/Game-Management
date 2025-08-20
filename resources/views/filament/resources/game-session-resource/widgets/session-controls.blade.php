@@ -1,22 +1,22 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <div class="flex flex-wrap gap-4">
-            <x-filament::button color="success" wire:click="start" :disabled="!$record?->is_active">
+            <x-filament::button color="success" wire:click="start" :disabled="$record?->start_at">
                 Start
             </x-filament::button>
 
-            <x-filament::button color="danger" wire:click="pause" :disabled="$record?->is_active">
+            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->start_at">
                 Pause
             </x-filament::button>
 
-            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="$record?->is_active">
+            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->start_at">
                 Trigger Swap
             </x-filament::button>
         </div>
 
         @if ($record?->start_at)
             <div class="mt-2 text-sm text-gray-500">
-                Mode: <strong>{{ strtoupper($record->mode) }}</strong> |
+                Mode: <strong>{{ $record->mode->label() }}</strong> |
                 Round: <strong>{{ $record->current_round }}</strong> |
                 @if ($record->swaps()->exists())
                 Next swap at:

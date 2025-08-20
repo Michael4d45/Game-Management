@@ -24,8 +24,6 @@ class SessionsTableWidget extends BaseWidget
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
-                TextColumn::make('current_game')
-                    ->searchable(),
                 TextColumn::make('players_count')
                     ->label('Players')
                     ->getStateUsing(fn ($record) => $record->players()->count()),

@@ -9,6 +9,7 @@ use App\Models\GameSession;
 use App\Models\SessionPlayer;
 use App\Services\GamePlayerBroadcast;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
@@ -39,7 +40,7 @@ class SessionPlayersTable extends BaseWidget
             )
             ->columns([
                 TextColumn::make('name'),
-                TextColumn::make('current_game'),
+                TextColumn::make('game_file'),
                 TextColumn::make('ping'),
                 IconColumn::make('is_ready')
                     ->boolean()
@@ -89,8 +90,11 @@ class SessionPlayersTable extends BaseWidget
                     ->label('Force Swap')
                     ->color('warning')
                     ->schema([
-                        TextInput::make('game')
+                        Select::make('game')
                             ->label('Game Name')
+                            ->options(
+                                $this->record?->game_files
+                            )
                             ->required(),
                     ])
                     ->action(function (SessionPlayer $player, array $data): void {

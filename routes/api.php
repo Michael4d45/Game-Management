@@ -117,9 +117,10 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         $session->load([
             'games',
         ]);
+
         logger($player->name . ' joined session ' . $session->name, ['session' => $session->toArray()]);
 
-        return response()->json($session->toArray());
+        return response()->json( $session->toArray());
     });
 
     // Heartbeat (Phase 3)
@@ -134,16 +135,10 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
 
         $player->update([
             'ping' => $request->integer('ping'),
-            'current_game' => $request->string('current_game')->toString(),
+            'game_file' => $request->string('current_game')->toString(),
             'last_seen' => now(),
             'is_connected' => true,
         ]);
-
-        // Save last heartbeat timestamp
-        Cache::put("heartbeat:{$player->name}", now(), 60);
-
-        // Dispatch disconnect job in 30 seconds
-        MarkUserDisconnected::dispatch($player->name)->delay(now()->addSeconds(12));
 
         return response()->json(['status' => 'ok']);
     });
@@ -154,7 +149,15 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         $player = auth()->user();
         $player->update(['is_ready' => true]);
 
-        return response()->json(['status' => 'ok']);
+        $currentGame = $player->gameSession?->chooseStartGameFor($player)?->file;
+        $player->update([
+            'game_file' => $currentGame,
+        ]);
+
+        return response()->json([
+            'game_file' => $currentGame,
+            'start_at' => $player->gameSession?->start_at?->getTimestamp(),
+        ]);
     });
 
     // Swap complete (Phase 4)

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Game;
 use App\Models\GameSession;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -21,8 +22,7 @@ return new class extends Migration
             $table->integer('ping')->nullable();
             $table->boolean('is_ready')->default(false);
             $table->boolean('is_connected')->default(true);
-            $table->string('current_game')->nullable();
-            $table->unsignedBigInteger('last_game_id')->nullable();
+            $table->foreignIdFor(Game::class)->nullable();
             $table->timestamp('last_seen')->nullable();
             $table->string('timezone')->nullable();
             $table->float('swap_offset')->nullable();
