@@ -7,39 +7,26 @@ namespace App\Events;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class DownloadROMEvent implements ShouldBroadcast
+class DownloadROMEvent extends CommandEvent
 {
     public function __construct(
-        public string $playerName,
+        public string $channel,
         public string $romName,
         public string $romUrl
     ) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[\Override]
-    public function broadcastOn(): array
-    {
-        return [new PrivateChannel("player.{$this->playerName}")];
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
-    public function broadcastWith(): array
+    public function getPayload(): array
     {
         return [
-            'type' => 'download_rom',
-            'payload' => [
                 'rom_name' => $this->romName,
                 'rom_url' => $this->romUrl,
-            ],
         ];
     }
 
-    public function broadcastAs(): string
+    #[\Override]
+    public function getType(): string
     {
-        return 'command';
+        return 'download_rom';
     }
 }

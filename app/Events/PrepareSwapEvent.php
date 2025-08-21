@@ -5,46 +5,27 @@ declare(strict_types=1);
 namespace App\Events;
 
 use Carbon\Carbon;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Queue\SerializesModels;
 
-class PrepareSwapEvent implements ShouldBroadcast
+class PrepareSwapEvent extends CommandEvent
 {
-    use InteractsWithSockets, SerializesModels;
-
     public function __construct(
-        public string $playerName,
+        public string $channel,
         public int $roundNumber,
         public Carbon $uploadBy
     ) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[\Override]
-    public function broadcastOn(): array
-    {
-        return [new PrivateChannel("player.{$this->playerName}")];
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    public function broadcastWith(): array
+    public function getPayload(): array
     {
         return [
-            'type' => 'prepare_swap',
-            'payload' => [
-                'round_number' => $this->roundNumber,
-                'upload_by' => $this->uploadBy->toIso8601String(),
-            ],
+            'round_number' => $this->roundNumber,
+            'upload_by' => $this->uploadBy->toIso8601String(),
         ];
     }
 
-    public function broadcastAs(): string
+    #[\Override]
+    public function getType(): string
     {
-        return 'command';
+        return 'prepare_swap';
     }
 }

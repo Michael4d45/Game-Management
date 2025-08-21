@@ -4,40 +4,24 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-
-class KickEvent implements ShouldBroadcast
+class KickEvent extends CommandEvent
 {
     public function __construct(
-        public string $playerName,
+        public string $channel,
         public string $reason
     ) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[\Override]
-    public function broadcastOn(): array
-    {
-        return [new PrivateChannel("player.{$this->playerName}")];
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
-    public function broadcastWith(): array
+    public function getPayload(): array
     {
         return [
-            'type' => 'kick',
-            'payload' => [
-                'reason' => $this->reason,
-            ],
+            'reason' => $this->reason,
         ];
     }
 
-    public function broadcastAs(): string
+    #[\Override]
+    public function getType(): string
     {
-        return 'command';
+        return 'kick';
     }
 }

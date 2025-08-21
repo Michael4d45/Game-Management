@@ -192,7 +192,15 @@ local function do_swap(target_game)
   load_state_if_exists(target_save_path)
 end
 
+local current_game = nil
+
 local function do_start(game)
+  client.unpause()
+  if game == current_game then
+    return
+  end
+  current_game = game
+
   local rom_path = ROM_DIR .. "/" .. game
   load_rom(rom_path)
 
@@ -210,19 +218,13 @@ local function do_save(path)
 end
 
 local function do_pause()
-  if client and client.pause then
-    client.pause()
-  elseif emu and emu.pause then
-    emu.pause()
-  end
+  client.pause()
+  console.log("[INFO] Simulated pause activated")
 end
 
 local function do_resume()
-  if client and client.unpause then
-    client.unpause()
-  elseif emu and emu.unpause then
-    emu.unpause()
-  end
+  client.unpause()
+  console.log("[INFO] Resumed emulation")
 end
 
 -- Socket client (connects to Go server)
@@ -287,8 +289,9 @@ local function read_lines()
           do_swap(game)
         end)
       elseif cmd == "START" and #parts >= 3 then
+        local at = tonumber(parts[2])
         local game = parts[3]
-        schedule_or_now(nil, function()
+        schedule_or_now(at, function()
           do_start(game)
         end)
       elseif cmd == "SAVE" and #parts >= 2 then
@@ -352,6 +355,11 @@ while true do
   read_lines()
   execute_due()
   auto_save_tick()
-  draw_messages() -- draw persistent messages this frame
-  emu.frameadvance()
+  draw_messages()
+
+  if client.ispaused() then
+    emu.yield()
+  else
+    emu.frameadvance()
+  end
 end

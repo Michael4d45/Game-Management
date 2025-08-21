@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-class PauseGameEvent extends CommandEvent
+class ClearSavesEvent extends CommandEvent
 {
     public function __construct(
         public string $channel,
@@ -13,6 +13,6 @@ class PauseGameEvent extends CommandEvent
     #[\Override]
     public function getType(): string
     {
-        return 'pause_game';
+        return 'clear_saves';
     }
 }

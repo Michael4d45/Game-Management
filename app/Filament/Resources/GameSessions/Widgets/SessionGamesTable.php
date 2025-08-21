@@ -47,7 +47,7 @@ class SessionGamesTable extends BaseWidget
                     ->action(function (Game $game): void {
                         // @phpstan-ignore property.nonObject
                         foreach ($this->record->players as $player) {
-                            GamePlayerBroadcast::toPlayer($player)
+                            (new GamePlayerBroadcast($player))
                                 ->swap(
                                     roundNumber: 999, // admin override
                                     swapAt: now()->addSeconds(3),

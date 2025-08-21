@@ -61,7 +61,7 @@ class SessionPlayersTable extends BaseWidget
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(function (SessionPlayer $player): void {
-                        GamePlayerBroadcast::toPlayer($player)
+                        (new GamePlayerBroadcast($player))
                             ->kick('Removed by admin');
 
                         Notification::make()
@@ -78,7 +78,7 @@ class SessionPlayersTable extends BaseWidget
                             ->required(),
                     ])
                     ->action(function (SessionPlayer $player, array $data): void {
-                        GamePlayerBroadcast::toPlayer($player)
+                        (new GamePlayerBroadcast($player))
                             ->message($data['text']);
 
                         Notification::make()
@@ -99,7 +99,7 @@ class SessionPlayersTable extends BaseWidget
                             ->required(),
                     ])
                     ->action(function (SessionPlayer $player, array $data): void {
-                        GamePlayerBroadcast::toPlayer($player)
+                        (new GamePlayerBroadcast($player))
                             ->swap(
                                 roundNumber: 999, // admin override
                                 swapAt: now()->addSeconds(3),

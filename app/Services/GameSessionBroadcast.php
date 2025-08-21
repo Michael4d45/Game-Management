@@ -4,50 +4,43 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ClearSavesEvent;
 use App\Events\PauseGameEvent;
-use App\Events\SessionEndedEvent;
 use App\Events\StartGameEvent;
 use App\Models\GameSession;
 
 class GameSessionBroadcast
 {
-    protected GameSession|null $session = null;
+    private string $channel;
 
-    public static function toSession(GameSession $session): self
+    public function __construct(public GameSession $session)
     {
-        $instance = new self;
-        $instance->session = $session;
-
-        return $instance;
+        $this->channel = "session.{$session->name}";
     }
 
     public function start(): void
     {
-        if (! $this->session) {
-            return;
+        $startAt = $this->session->start_at;
+        if (! $startAt) {
+            throw new \Exception('Expected start at for session: ' . $this->session->name);
         }
         broadcast(new StartGameEvent(
-            sessionName: $this->session->name
+            channel: $this->channel,
+            startAt: $startAt->getTimestamp(),
         ));
     }
 
     public function pause(): void
     {
-        if (! $this->session) {
-            return;
-        }
         broadcast(new PauseGameEvent(
-            sessionName: $this->session->name
+            channel: $this->channel,
         ));
     }
 
-    public function end(): void
+    public function clearSaves(): void
     {
-        if (! $this->session) {
-            return;
-        }
-        broadcast(new SessionEndedEvent(
-            sessionName: $this->session->name
+        broadcast(new ClearSavesEvent(
+            channel: $this->channel,
         ));
     }
 }

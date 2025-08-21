@@ -7,37 +7,24 @@ namespace App\Events;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class ServerMessageEvent implements ShouldBroadcast
+class ServerMessageEvent extends CommandEvent
 {
     public function __construct(
-        public string $playerName,
+        public string $channel,
         public string $text
     ) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[\Override]
-    public function broadcastOn(): array
-    {
-        return [new PrivateChannel("player.{$this->playerName}")];
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
-    public function broadcastWith(): array
+    public function getPayload(): array
     {
         return [
-            'type' => 'message',
-            'payload' => [
                 'text' => $this->text,
-            ],
         ];
     }
 
-    public function broadcastAs(): string
+    #[\Override]
+    public function getType(): string
     {
-        return 'command';
+        return 'message';
     }
 }

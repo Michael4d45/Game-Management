@@ -19,6 +19,8 @@ class SessionControlsWidget extends Widget
 
     public GameSession|null $record = null;
 
+    public int $startDelay = 15;
+
     public function mount(GameSession $record): void
     {
         $this->record = $record;
@@ -31,10 +33,10 @@ class SessionControlsWidget extends Widget
         }
 
         $this->record->update([
-            'start_at' => now()->addSeconds(3),
+            'start_at' => now()->addSeconds($this->startDelay),
         ]);
 
-        GameSessionBroadcast::toSession($this->record)->start();
+        (new GameSessionBroadcast($this->record))->start();
 
         Notification::make()
             ->title('Game start scheduled')
@@ -52,10 +54,24 @@ class SessionControlsWidget extends Widget
             'start_at' => null,
         ]);
 
-        GameSessionBroadcast::toSession($this->record)->pause();
+        (new GameSessionBroadcast($this->record))->pause();
 
         Notification::make()
             ->title('Game paused')
+            ->warning()
+            ->send();
+    }
+
+    public function clearSaves(): void
+    {
+        if (! $this->record) {
+            return;
+        }
+
+        (new GameSessionBroadcast($this->record))->clearSaves();
+
+        Notification::make()
+            ->title('Saves cleared')
             ->warning()
             ->send();
     }
@@ -74,7 +90,7 @@ class SessionControlsWidget extends Widget
         foreach ($this->record->players as $player) {
             switch ($this->record->mode) {
                 case GameSessionMode::SyncList:
-                    GamePlayerBroadcast::toPlayer($player)
+                    (new GamePlayerBroadcast($player))
                         ->swap(
                             roundNumber: $round,
                             swapAt: $swapAt,
@@ -84,7 +100,7 @@ class SessionControlsWidget extends Widget
                     break;
                 case GameSessionMode::SaveSwap:
                     $saveUrl = $this->assignSaveForPlayer($player);
-                    GamePlayerBroadcast::toPlayer($player)
+                    (new GamePlayerBroadcast($player))
                         ->swap(
                             roundNumber: $round,
                             swapAt: $swapAt,
