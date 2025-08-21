@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('games', function (Blueprint $table): void {
             $table->string('file')->unique()->primary();
+            $table->string('extra_file')->nullable();
             $table->timestamps();
         });
     }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Events;
 
 use App\Models\GameSession;
-use Exception;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -32,9 +31,10 @@ class StartGameEvent implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $startAt = GameSession::query()->firstWhere('name', $this->sessionName)?->start_at;
-        if (!$startAt) {
-            throw new Exception('Expected start at for session: '. $this->sessionName);
+        if (! $startAt) {
+            throw new \Exception('Expected start at for session: ' . $this->sessionName);
         }
+
         return [
             'type' => 'start_game',
             'payload' => [

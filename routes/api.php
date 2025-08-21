@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Jobs\MarkUserDisconnected;
 use App\Models\GameSession;
 use App\Models\GameSwap;
 use App\Models\SessionPlayer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage; // Added for file storage
 
 /*
 |--------------------------------------------------------------------------
@@ -70,8 +69,8 @@ Route::get('/check-session/{name}', function ($name) {
 
 // ROM download
 Route::get('/roms/{filename}', function ($filename) {
-    $path = config()->string('game.files_path') . "/" . $filename;
-    logger('attempting to download: '.$filename);
+    $path = config()->string('game.files_path') . '/' . $filename;
+    logger('attempting to download: ' . $filename);
     if (! file_exists($path)) {
         abort(404);
     }
@@ -85,6 +84,58 @@ Route::get('/scripts/latest', function () {
 
     // @phpstan-ignore encapsedStringPart.nonString
     return response()->download(storage_path("app/scripts/$filename"));
+});
+
+// New endpoint for BizhawkFiles.zip
+Route::get('/BizhawkFiles.zip', function () {
+    $zipPath = storage_path('app/BizhawkFiles.zip');
+
+    // Create the zip file on the fly if it doesn't exist
+    // In a production environment, you would likely pre-generate this.
+    if (! file_exists($zipPath)) {
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+            // Add Firmware directory contents
+            $firmwareDir = storage_path('app/Firmware');
+            if (is_dir($firmwareDir)) {
+                $files = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($firmwareDir),
+                    RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $name => $file) {
+                    // Skip directories (they would be added automatically) and non-files
+                    if (! $file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = substr($filePath, strlen($firmwareDir) + 1);
+                        $zip->addFile($filePath, 'Firmware/' . $relativePath);
+                    }
+                }
+            } else {
+                // Optionally create the Firmware directory if it's missing for demonstration
+                // In a real scenario, this content would be managed by deployment
+                mkdir($firmwareDir, 0755, true);
+                file_put_contents($firmwareDir . '/placeholder.txt', 'This is a placeholder firmware file.');
+                $zip->addFile($firmwareDir . '/placeholder.txt', 'Firmware/placeholder.txt');
+            }
+
+            // Add config.ini
+            $configPath = storage_path('app/config.ini');
+            if (! file_exists($configPath)) {
+                // Create a dummy config.ini if it doesn't exist for demonstration
+                file_put_contents($configPath, "[EmuHawk]\nExampleSetting=true\n");
+            }
+            $zip->addFile($configPath, 'config.ini');
+
+            $zip->close();
+        } else {
+            abort(500, 'Could not create BizhawkFiles.zip');
+        }
+    }
+
+    return response()->download($zipPath, 'BizhawkFiles.zip', [
+        'Content-Type' => 'application/zip',
+    ]);
 });
 
 /*
@@ -120,7 +171,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
 
         logger($player->name . ' joined session ' . $session->name, ['session' => $session->toArray()]);
 
-        return response()->json( $session->toArray());
+        return response()->json($session->toArray());
     });
 
     // Heartbeat (Phase 3)

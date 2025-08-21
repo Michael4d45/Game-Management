@@ -110,7 +110,7 @@ class GameSession extends Model
                         'chosen_game' => $firstGame,
                     ]);
 
-                    return Game::where('file', $firstGame)->firstOrFail();
+                    return Game::fromFile($firstGame);
                 } else {
                     $game = $this->games->random();
                     logger('SyncList mode: no games found, choosing random: ' . $game->file);

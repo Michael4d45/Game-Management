@@ -65,7 +65,7 @@
         ],
         "work": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently --raw -k false --kill-signal SIGTERM \"php artisan queue:listen --tries=1\" \"php artisan reverb:start\" \"php artisan schedule:run\""
+            "npx concurrently --raw -k false --kill-signal SIGTERM \"php artisan queue:listen --tries=1\" \"php artisan reverb:start\" \"php artisan schedule:work\""
         ],
         "test": [
             "@php artisan config:clear --ansi",

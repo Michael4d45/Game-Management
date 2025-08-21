@@ -15,7 +15,7 @@ class Game extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['file'];
+    protected $fillable = ['file', 'extra_file'];
 
     /**
      * @return BelongsToMany<GameSession,$this>
@@ -23,5 +23,10 @@ class Game extends Model
     public function gameSessions(): BelongsToMany
     {
         return $this->belongsToMany(GameSession::class, 'session_games');
+    }
+
+    public static function fromFile(string $file): self
+    {
+        return self::where('file', $file)->firstOrFail();
     }
 }

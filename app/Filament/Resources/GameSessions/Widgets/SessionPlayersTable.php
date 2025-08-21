@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\GameSessions\Widgets;
 
 use App\Facades\Position;
+use App\Models\Game;
 use App\Models\GameSession;
 use App\Models\SessionPlayer;
 use App\Services\GamePlayerBroadcast;
@@ -102,7 +103,7 @@ class SessionPlayersTable extends BaseWidget
                             ->swap(
                                 roundNumber: 999, // admin override
                                 swapAt: now()->addSeconds(3),
-                                newGame: $data['game']
+                                newGame: Game::fromFile($data['game'])
                             );
 
                         Notification::make()

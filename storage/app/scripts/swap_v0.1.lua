@@ -5,7 +5,8 @@
 --   SAVE|<save_path>
 --   PAUSE[|<epoch>]
 --   RESUME[|<epoch>]
---   MSG|<text>
+--   MSG|<text>               -- shows for default 3s
+--   MSG|<seconds>|<text>     -- shows for given seconds
 
 local socket = require("socket.core") -- BizHawk has LuaSocket
 local HOST = "127.0.0.1"
@@ -20,85 +21,126 @@ console.log("BIZHAWK_ROM_DIR: " .. ROM_DIR)
 console.log("BIZHAWK_SAVE_DIR: " .. SAVE_DIR)
 
 local function now()
-  local currentTime = socket.gettime()
-  return currentTime
+  return socket.gettime()
+end
+
+local function write_to_screen(text, x, y, fontsize, fg, bg)
+  gui.use_surface("client")
+  gui.drawText(
+    x or 10,
+    y or 10,
+    text,
+    fg or 0xFFFFFFFF, -- default white text
+    bg or 0xFF000000, -- default black background
+    fontsize or 12
+  )
+end
+
+-- Active on-screen messages (persisted by re-drawing each frame)
+local messages = {} -- list of { text=..., expires=..., x=..., y=..., fontsize=..., fg=..., bg=... }
+
+local function show_message(text, duration, x, y, fontsize, fg, bg)
+  duration = tonumber(duration) or 3.0
+  table.insert(messages, {
+    text = text or "",
+    expires = now() + duration,
+    x = x or 10,
+    y = y or 10,
+    fontsize = fontsize or 12,
+    fg = fg or 0xFFFFFFFF,
+    bg = bg or 0xFF000000
+  })
+end
+
+local function draw_messages()
+  gui.clearGraphics()
+  if #messages == 0 then
+    return
+  end
+  gui.use_surface("client")
+  local t = now()
+  local keep = {}
+  local yoff = 0
+  for _, m in ipairs(messages) do
+    if t < m.expires then
+      gui.drawText(m.x, m.y + yoff, m.text, m.fg, m.bg, m.fontsize)
+      table.insert(keep, m)
+      yoff = yoff + (m.fontsize + 4) -- stack messages vertically
+    end
+  end
+  messages = keep
 end
 
 local function file_exists(name)
-  console.log("Checking if file exists: " .. name)
   local f = io.open(name, "r")
   if f ~= nil then
     io.close(f)
-    console.log("File exists: " .. name)
     return true
   else
-    console.log("File does not exist: " .. name)
     return false
   end
 end
 
 local function save_state(path)
-  console.log("Attempting to save state to: " .. path)
   savestate.save(path)
-  console.log("Save state command issued for: " .. path)
 end
 
 local function load_state_if_exists(path)
-  console.log("Attempting to load state if it exists at: " .. path)
   if file_exists(path) then
-    console.log("Loading state from: " .. path)
     savestate.load(path)
-    console.log("Load state command issued for: " .. path)
-  else
-    console.log("No save state found at: " .. path .. ", skipping load.")
   end
 end
 
 local function load_rom(path)
-  console.log("Attempting to load ROM: " .. path)
   if file_exists(path) then
-    console.log("Loading ROM: " .. path)
     client.openrom(path)
-    console.log("Open ROM command issued for: " .. path)
   else
     console.log("ROM not found: " .. path .. ", cannot load.")
   end
 end
 
--- Simple line splitter (keeps spaces intact)
-local function split_pipe(s)
-  console.log("Splitting string by pipe: '" .. s .. "'")
-  local parts = {}
-  for part in string.gmatch(s, "([^|]+)") do
-    table.insert(parts, part)
+-- Helpers for ROM naming
+local function get_rom_display_name()
+  if client and client.getromname then
+    return client.getromname()
   end
-  console.log("Split parts: " .. table.concat(parts, ", "))
-  return parts
+  if gameinfo and gameinfo.getromname then
+    return gameinfo.getromname()
+  end
+  if emu and emu.getromname then
+    return emu.getromname()
+  end
+  return nil
+end
+
+local function sanitize_filename(name)
+  if not name then
+    return nil
+  end
+  name = name:gsub("[/\\:*?\"<>|]", "_")
+  name = name:gsub("%s+$", "")
+  return name
+end
+
+local function strip_extension(filename)
+  return (filename:gsub("%.[^%.]+$", ""))
 end
 
 -- Scheduler
 local pending = {} -- list of { at = <epoch>, fn = function() end }
-console.log("Scheduler initialized. Pending jobs list is empty.")
 
 local function schedule(at_epoch, fn)
-  console.log("Scheduling job for epoch: " .. tostring(at_epoch))
   table.insert(pending, { at = at_epoch, fn = fn })
-  console.log("Job scheduled. Total pending jobs: " .. #pending)
 end
 
 local function execute_due()
   local t = now()
   local keep = {}
-  local executedCount = 0
-  for i, job in ipairs(pending) do
+  for _, job in ipairs(pending) do
     if job.at <= t then
-      console.log("Executing scheduled job due at: " .. tostring(job.at))
       local ok, err = pcall(job.fn)
       if not ok then
         console.log("[ERROR] Scheduled task failed: " .. tostring(err))
-      else
-        console.log("Scheduled job executed successfully.")
-        executedCount = executedCount + 1
       end
     else
       table.insert(keep, job)
@@ -108,198 +150,208 @@ local function execute_due()
 end
 
 local function schedule_or_now(at_epoch, fn)
-  console.log(
-    "Deciding to schedule or execute immediately. Target epoch: " ..
-      tostring(at_epoch) ..
-      ", current time: " ..
-      tostring(now())
-  )
   if at_epoch and at_epoch > (now() + 0.0005) then
-    console.log("Scheduling command for future execution.")
     schedule(at_epoch, fn)
   else
-    console.log("Executing command immediately.")
     local ok, err = pcall(fn)
     if not ok then
       console.log("[ERROR] Immediate command failed: " .. tostring(err))
-    else
-      console.log("Immediate command executed successfully.")
     end
   end
 end
 
+-- Save current ROM state if valid
+local function save_current_if_any()
+  local cur = get_rom_display_name()
+  cur = sanitize_filename(cur)
+  if not cur or cur == "" or cur:lower() == "null" then
+    return
+  end
+  local path = SAVE_DIR .. "/" .. cur .. ".state"
+  local ok, err = pcall(function()
+    save_state(path)
+  end)
+  if not ok then
+    console.log("[ERROR] Failed to save state for '" .. tostring(cur) .. "': " .. tostring(err))
+  end
+end
+
 -- Command handlers
-local function do_swap(game)
-  console.log("Executing SWAP command for game: " .. game)
-  local rom_path = ROM_DIR .. "/" .. game
-  local save_path = SAVE_DIR .. "/" .. game .. ".state"
-  console.log("SWAP: ROM path determined: " .. rom_path)
-  console.log("SWAP: Save path determined: " .. save_path)
+local function do_swap(target_game)
+  save_current_if_any()
+
+  local rom_path = ROM_DIR .. "/" .. target_game
   load_rom(rom_path)
-  load_state_if_exists(save_path)
-  console.log("SWAP command finished for game: " .. game)
+
+  local disp = sanitize_filename(get_rom_display_name())
+  if not disp or disp == "" or disp:lower() == "null" then
+    disp = sanitize_filename(strip_extension(target_game))
+  end
+
+  local target_save_path = SAVE_DIR .. "/" .. disp .. ".state"
+  load_state_if_exists(target_save_path)
 end
 
 local function do_start(game)
-  console.log("Executing START command for game: " .. game)
   local rom_path = ROM_DIR .. "/" .. game
-  console.log("START: ROM path determined: " .. rom_path)
   load_rom(rom_path)
-  -- Optional: preload a state if present
-  local save_path = SAVE_DIR .. "/" .. game .. ".state"
-  console.log("START: Save path determined for optional preload: " .. save_path)
+
+  local disp = sanitize_filename(get_rom_display_name())
+  if not disp or disp == "" or disp:lower() == "null" then
+    disp = sanitize_filename(strip_extension(game))
+  end
+
+  local save_path = SAVE_DIR .. "/" .. disp .. ".state"
   load_state_if_exists(save_path)
-  console.log("START command finished for game: " .. game)
 end
 
 local function do_save(path)
-  console.log("Executing SAVE command to path: " .. path)
   save_state(path)
-  console.log("SAVE command finished for path: " .. path)
 end
 
 local function do_pause()
-  console.log("Executing PAUSE command: Pausing emulation")
-  emu.pause()
-  console.log("PAUSE command issued.")
+  if client and client.pause then
+    client.pause()
+  elseif emu and emu.pause then
+    emu.pause()
+  end
 end
 
 local function do_resume()
-  console.log("Executing RESUME command: Resuming emulation")
-  emu.unpause()
-  console.log("RESUME command issued.")
+  if client and client.unpause then
+    client.unpause()
+  elseif emu and emu.unpause then
+    emu.unpause()
+  end
 end
 
 -- Socket client (connects to Go server)
-local client = nil
+local client_socket = nil
 local last_attempt = 0
-console.log("Socket client initialized to nil. Last attempt time: " .. last_attempt)
 
 local function ensure_connected()
-  if client ~= nil then
+  if client_socket ~= nil then
     return
   end
   local t = now()
   if t - last_attempt < 1.0 then
-    console.log(
-      "Too soon to retry connection. Last attempt was " ..
-        tostring(t - last_attempt) ..
-        " seconds ago."
-    )
     return
   end
   last_attempt = t
-  console.log(string.format("Attempting IPC connect to %s:%d ...", HOST, PORT))
   local c, err = socket.tcp()
   if not c then
-    console.log("[ERROR] Failed to create TCP socket: " .. tostring(err))
     return
   end
-  c:settimeout(0) -- non-blocking
+  c:settimeout(0)
   local ok, err2 = c:connect(HOST, PORT)
-  -- With non-blocking sockets, connect may return nil, 'timeout' while connecting.
-  -- We'll treat that as fine and proceed; reads will timeout until connected.
-  client = c
-  if ok then
-    console.log("Successfully initiated non-blocking connect.")
-  elseif err2 == "timeout" then
-    console.log(
-      "Connect operation is in progress (timeout due to non-blocking)."
-    )
-  else
-    console.log("[ERROR] Initial connect failed: " .. tostring(err2))
-    client:close()
-    client = nil
+  client_socket = c
+  if not ok and err2 ~= "timeout" then
+    client_socket:close()
+    client_socket = nil
   end
 end
 
+local function split_pipe(s)
+  local parts = {}
+  for part in string.gmatch(s, "([^|]+)") do
+    table.insert(parts, part)
+  end
+  return parts
+end
+
+local function join_from(parts, start_index)
+  if not parts[start_index] then
+    return ""
+  end
+  local s = parts[start_index]
+  for i = start_index + 1, #parts do
+    s = s .. "|" .. parts[i]
+  end
+  return s
+end
+
 local function read_lines()
-  if not client then
-    console.log("No client connected, skipping read_lines.")
+  if not client_socket then
     return
   end
   while true do
-    local line, err, partial = client:receive("*l")
+    local line, err, partial = client_socket:receive("*l")
     if line then
-      console.log("Received line from IPC: '" .. line .. "'")
       local parts = split_pipe(line)
+      console.log(parts)
       local cmd = parts[1]
       if cmd == "SWAP" and #parts >= 3 then
         local at = tonumber(parts[2])
         local game = parts[3]
-        console.log(
-          string.format(
-            "Parsed SWAP command: game='%s', epoch=%s",
-            game,
-            tostring(at)
-          )
-        )
         schedule_or_now(at, function()
           do_swap(game)
         end)
       elseif cmd == "START" and #parts >= 3 then
-        local at = tonumber(parts[2])
         local game = parts[3]
-        console.log(
-          string.format(
-            "Parsed START command: game='%s', epoch=%s",
-            game,
-            tostring(at)
-          )
-        )
         schedule_or_now(nil, function()
           do_start(game)
         end)
       elseif cmd == "SAVE" and #parts >= 2 then
         local path = parts[2]
-        console.log("Parsed SAVE command: path='" .. path .. "'")
         schedule_or_now(nil, function()
           do_save(path)
         end)
       elseif cmd == "PAUSE" then
         local at = tonumber(parts[2] or "")
-        console.log(
-          "Parsed PAUSE command: epoch=" .. tostring(at or "nil (immediate)")
-        )
         schedule_or_now(at, function()
           do_pause()
         end)
       elseif cmd == "RESUME" then
         local at = tonumber(parts[2] or "")
-        console.log(
-          "Parsed RESUME command: epoch=" .. tostring(at or "nil (immediate)")
-        )
         schedule_or_now(at, function()
           do_resume()
         end)
       elseif cmd == "MSG" and #parts >= 2 then
-        console.log("[SERVER MESSAGE] " .. parts[2])
-      else
-        console.log("[WARN] Unknown/invalid command line: '" .. line .. "'")
+        -- Support either: MSG|<text>
+        -- or: MSG|<seconds>|<text>
+        local dur = tonumber(parts[2])
+        local text = nil
+        if dur and #parts >= 3 then
+          text = join_from(parts, 3)
+        else
+          dur = 3.0
+          text = join_from(parts, 2)
+        end
+        console.log("[SERVER MESSAGE] " .. tostring(text))
+        show_message(text, dur)
       end
     else
       if err == "timeout" then
         break
       elseif err == "closed" then
-        console.log("IPC connection closed by server; will retry connecting.")
-        client:close()
-        client = nil
+        client_socket:close()
+        client_socket = nil
         break
       else
-        console.log("[ERROR] Error reading from socket: " .. tostring(err))
-        console.log("Breaking read loop due to error.")
-        -- Any other error while not connected yet? Just break and try again.
         break
       end
     end
   end
 end
 
+-- Auto-save every 10 seconds
+local AUTO_SAVE_INTERVAL = 10.0
+local next_auto_save = now() + AUTO_SAVE_INTERVAL
+
+local function auto_save_tick()
+  local t = now()
+  if t >= next_auto_save then
+    save_current_if_any()
+    next_auto_save = t + AUTO_SAVE_INTERVAL
+  end
+end
+
 -- Main loop
-console.log("Entering main emulation loop.")
 while true do
   ensure_connected()
   read_lines()
   execute_due()
+  auto_save_tick()
+  draw_messages() -- draw persistent messages this frame
   emu.frameadvance()
 end

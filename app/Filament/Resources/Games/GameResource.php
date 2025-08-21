@@ -28,31 +28,50 @@ class GameResource extends Resource
     #[\Override]
     public static function form(Schema $schema): Schema
     {
+        $availableFiles = static::getAvailableGameFiles();
+
         return $schema
             ->components([
                 Select::make('file')
                     ->label('Game File')
-                    ->options(function () {
-                        $path = config()->string('game.files_path');
-
-                        // Get all files in the folder
-                        $allFiles = collect(File::files($path))
-                            ->map(fn ($file) => $file->getFilename());
-
-                        // Get files already used in DB
-                        /** @var Collection<array-key,string> $usedFiles */
-                        $usedFiles = Game::pluck('file');
-
-                        // Filter out used files
-                        $availableFiles = $allFiles->diff($usedFiles);
-
-                        // Return as key-value array for dropdown
-                        return $availableFiles->mapWithKeys(fn ($f) => [$f => $f])->toArray();
-                    })
+                    ->options($availableFiles)
+                    ->unique()
+                    ->hiddenOn('edit')
+                    ->searchable()
                     ->required()
+                    ->preload(),
+                Select::make('extra_file')
+                    ->label('Extra File')
+                    ->options($availableFiles)
                     ->searchable()
                     ->preload(),
             ]);
+    }
+
+    /**
+     * Get available game files.
+     *
+     * @return array<array-key,string>
+     */
+    protected static function getAvailableGameFiles(): array
+    {
+        $path = config()->string('game.files_path');
+
+        $allFiles = collect(File::files($path))
+            ->map(fn ($file) => $file->getFilename());
+
+        /** @var Collection<array-key, string> $usedFiles */
+        $usedFiles = Game::pluck('file');
+
+        /** @var Collection<array-key, string> $usedExtraFiles */
+        $usedExtraFiles = Game::pluck('extra_file');
+
+        $availableFiles = $allFiles
+            ->diff($usedFiles)
+            ->diff($usedExtraFiles);
+
+        // @phpstan-ignore return.type
+        return $availableFiles->mapWithKeys(fn ($f) => [$f => $f])->toArray();
     }
 
     #[\Override]
@@ -62,7 +81,7 @@ class GameResource extends Resource
             ->columns([
                 TextColumn::make('id')->sortable(),
                 TextColumn::make('file')->searchable(),
-                TextColumn::make('created_at')->dateTime(),
+                TextColumn::make('extra_file')->searchable(),
             ])
             ->filters([])
             ->recordActions([
