@@ -39,6 +39,6 @@ class RetryUnackedSwaps implements ShouldQueue
             );
 
         // Re-dispatch this job with delay (retry loop)
-        self::dispatch($this->swapId)->delay(now()->addSeconds(2));
+        self::dispatch($this->swapId)->delay(3);
     }
 }

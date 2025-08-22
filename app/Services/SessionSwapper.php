@@ -36,7 +36,7 @@ class SessionSwapper
                         'game_file' => $newGame->file,
                     ]);
                     if ($player->is_connected) {
-                        RetryUnackedSwaps::dispatch($swap->id)->delay(now()->addSeconds(2));
+                        RetryUnackedSwaps::dispatch($swap->id)->delay(3);
                     }
                 }
                 (new GameSessionBroadcast($session))
@@ -63,7 +63,7 @@ class SessionSwapper
                         'save_state_path' => $saveUrl,
                     ]);
                     if ($player->is_connected) {
-                        RetryUnackedSwaps::dispatch($swap->id)->delay(now()->addSeconds(2));
+                        RetryUnackedSwaps::dispatch($swap->id)->delay(3);
 
                         (new GamePlayerBroadcast($player))
                             ->swap(

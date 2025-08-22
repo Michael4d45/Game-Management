@@ -113,8 +113,8 @@ end
 -- === Scheduler ===
 local pending = {} -- list of { at = <epoch>, fn = function() end }
 
-local function schedule(at_epoch, fn)
-  table.insert(pending, { at = at_epoch, fn = fn })
+local function schedule(at_epoch, fn, command)
+  table.insert(pending, { at = at_epoch, fn = fn, command = command })
 end
 
 local function execute_due()
@@ -133,9 +133,9 @@ local function execute_due()
   pending = keep
 end
 
-local function schedule_or_now(at_epoch, fn)
+local function schedule_or_now(at_epoch, fn, command)
   if at_epoch and at_epoch > (now() + 0.0005) then
-    schedule(at_epoch, fn)
+    schedule(at_epoch, fn, command)
   else
     local ok, err = pcall(fn)
     if not ok then
@@ -257,7 +257,7 @@ local function read_lines()
         local id, cmd = parts[2], parts[3]
         if cmd == "SWAP" then
           local at, game = tonumber(parts[4]), parts[5]
-          safe_exec(id, function() schedule_or_now(at, function() do_swap(game) end) end)
+          safe_exec(id, function() schedule_or_now(at, function() do_swap(game) end, game) end)
         elseif cmd == "SAVE" then
           local path = parts[4]
           safe_exec(id, function() do_save(path) end)
@@ -269,10 +269,10 @@ local function read_lines()
           safe_exec(id, function()
             if state == "running" then
               if game and game ~= "" then
-                schedule_or_now(state_at, function() do_start(game) end)
+                schedule_or_now(state_at, function() do_start(game) end, game, 'start')
               end
             else
-              schedule_or_now(state_at, do_pause)
+              schedule_or_now(state_at, do_pause, 'pause')
             end
           end)
         else
@@ -310,6 +310,26 @@ local function auto_save_tick()
   end
 end
 
+-- === Pending jobs logger ===
+local PENDING_LOG_INTERVAL = 10.0
+local next_pending_log = now() + PENDING_LOG_INTERVAL
+
+local function pending_log_tick()
+  local t = now()
+  if t >= next_pending_log then
+    if #pending == 0 then
+      console.log("[PENDING] No scheduled games.")
+    else
+      console.log("[PENDING] Scheduled games:")
+      for i, job in ipairs(pending) do
+        local secs = math.max(0, job.at - t)
+        console.log(string.format("  %s in %.1fs", job.command, secs))
+      end
+    end
+    next_pending_log = t + PENDING_LOG_INTERVAL
+  end
+end
+
 -- === Main loop ===
 while true do
   ensure_connected()
@@ -318,6 +338,7 @@ while true do
   auto_save_tick()
   draw_messages()
   heartbeat_tick()
+  pending_log_tick()
 
   if client.ispaused() then emu.yield() else emu.frameadvance() end
 end
