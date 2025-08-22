@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Query\Expression;
 use App\Models\Game;
 use App\Models\GameSession;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -21,10 +23,11 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
             $table->enum('mode', ['sync_list', 'save_swap']);
-            $table->integer('swap_interval')->default(0); // seconds
-            $table->string('status')->nullable();
+            $table->integer('swap_interval_min')->default(5); // seconds
+            $table->integer('swap_interval_max')->default(10); // seconds
+            $table->string('status')->default('stopped');
             $table->integer('current_round')->default(0);
-            $table->timestamp('start_at')->nullable();
+            $table->timestampTz('status_at')->default(new Expression('CURRENT_TIMESTAMP'));
             $table->timestamps();
         });
 

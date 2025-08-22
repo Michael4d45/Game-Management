@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-
 class ServerMessageEvent extends CommandEvent
 {
     public function __construct(
@@ -18,7 +15,7 @@ class ServerMessageEvent extends CommandEvent
     public function getPayload(): array
     {
         return [
-                'text' => $this->text,
+            'text' => $this->text,
         ];
     }
 

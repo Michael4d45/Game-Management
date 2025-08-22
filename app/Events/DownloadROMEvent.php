@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-
 class DownloadROMEvent extends CommandEvent
 {
     public function __construct(
@@ -19,8 +16,8 @@ class DownloadROMEvent extends CommandEvent
     public function getPayload(): array
     {
         return [
-                'rom_name' => $this->romName,
-                'rom_url' => $this->romUrl,
+            'rom_name' => $this->romName,
+            'rom_url' => $this->romUrl,
         ];
     }
 

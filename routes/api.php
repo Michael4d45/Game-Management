@@ -199,15 +199,16 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         /** @var SessionPlayer $player */
         $player = auth()->user();
         $player->update(['is_ready' => true]);
+        $session = $player->gameSession;
 
-        $currentGame = $player->gameSession?->chooseStartGameFor($player)?->file;
+        $currentGame = $session?->chooseStartGameFor($player)?->file;
         $player->update([
             'game_file' => $currentGame,
         ]);
 
         return response()->json([
             'game_file' => $currentGame,
-            'start_at' => $player->gameSession?->start_at?->getTimestamp(),
+            'start_at' => $session?->isRunning ? $session->status_at->getTimestamp() : null,
         ]);
     });
 

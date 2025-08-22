@@ -38,7 +38,11 @@ class GameSessionResource extends Resource
                     ->options(GameSessionMode::options())
                     ->default(GameSessionMode::SyncList->value)
                     ->required(),
-                TextInput::make('swap_interval')
+                TextInput::make('swap_interval_min')
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(0),
+                TextInput::make('swap_interval_max')
                     ->numeric()
                     ->minValue(0)
                     ->default(0),

@@ -10,15 +10,15 @@
                     class="w-28" wire:model.defer="startDelay" placeholder="0" />
             </div>
 
-            <x-filament::button color="success" wire:click="start" :disabled="$record?->start_at">
+            <x-filament::button color="success" wire:click="start" :disabled="$record?->isRunning">
                 Start
             </x-filament::button>
 
-            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->start_at">
+            <x-filament::button color="danger" wire:click="pause" :disabled="!$record?->isRunning">
                 Pause
             </x-filament::button>
 
-            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->start_at">
+            <x-filament::button color="warning" wire:click="triggerSwap" :disabled="!$record?->isRunning">
                 Trigger Swap
             </x-filament::button>
 
@@ -27,7 +27,7 @@
             </x-filament::button>
         </div>
 
-        @if ($record?->start_at)
+        @if ($record?->isRunning)
             <div class="mt-2 text-sm text-gray-500">
                 Mode: <strong>{{ $record->mode->label() }}</strong> |
                 Round: <strong>{{ $record->current_round }}</strong> |
@@ -39,12 +39,12 @@
             </div>
             <div class="mt-2 text-sm text-gray-500">
                 Scheduled to start at
-                <span x-data="{ localTime: '' }" x-init="let dt = new Date('{{ $record->start_at->toIso8601String() }}');
+                <span x-data="{ localTime: '' }" x-init="let dt = new Date('{{ $record->status_at->toIso8601String() }}');
                 localTime = dt.toLocaleTimeString();" x-text="localTime"></span>
             </div>
 
             <div x-data="{
-                startAt: new Date('{{ $record->start_at->toIso8601String() }}'),
+                startAt: new Date('{{ $record->status_at->toIso8601String() }}'),
                 now: new Date(),
                 get elapsed() {
                     let diff = Math.floor((this.now - this.startAt) / 1000);

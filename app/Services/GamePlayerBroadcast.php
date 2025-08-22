@@ -12,7 +12,6 @@ use App\Events\PrepareSwapEvent;
 use App\Events\ServerMessageEvent;
 use App\Events\SwapEvent;
 use App\Models\Game;
-use App\Models\GameSwap;
 use App\Models\SessionPlayer;
 use Carbon\Carbon;
 
@@ -28,16 +27,6 @@ class GamePlayerBroadcast
 
     public function swap(int $roundNumber, Carbon $swapAt, Game $newGame, string|null $saveUrl = null): void
     {
-        GameSwap::create([
-            'game_session_id' => $this->player->game_session_id,
-            'session_player_name' => $this->player->name,
-            'game_file' => $newGame->file,
-            'save_state_path' => $saveUrl,
-            'initiated_by' => auth()->id() ?? 'system',
-            'round_number' => $roundNumber,
-            'swap_at' => $swapAt,
-        ]);
-
         broadcast(new SwapEvent(
             channel: $this->channel,
             roundNumber: $roundNumber,
@@ -93,7 +82,8 @@ class GamePlayerBroadcast
         ));
     }
 
-    public function clearSaves(): void {
+    public function clearSaves(): void
+    {
         broadcast(new ClearSavesEvent(
             channel: $this->channel,
         ));

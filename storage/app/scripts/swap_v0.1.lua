@@ -1,14 +1,22 @@
--- BizHawk Lua: IPC command runner over TCP from local Go client
+-- shuffler.lua
+-- BizHawk Lua: IPC command runner with ACK/NACK, heartbeat, and SYNC
 -- Commands (one per line):
---   SWAP|<epoch>|<game_file>
---   START|<epoch>|<game_file>
---   SAVE|<save_path>
---   PAUSE[|<epoch>]
---   RESUME[|<epoch>]
---   MSG|<text>               -- shows for default 3s
---   MSG|<seconds>|<text>     -- shows for given seconds
+--   CMD|<id>|SWAP|<epoch>|<game_file>
+--   CMD|<id>|START|<epoch>|<game_file>
+--   CMD|<id>|SAVE|<save_path>
+--   CMD|<id>|PAUSE[|<epoch>]
+--   CMD|<id>|RESUME[|<epoch>]
+--   CMD|<id>|MSG|<text>
+--   CMD|<id>|SYNC|<game>|<paused>|<start_at>
+-- Lua → Go:
+--   ACK|<id>
+--   NACK|<id>|<reason>
+--   HELLO
+--   PING|<timestamp>
+-- Go → Lua:
+--   PONG|<timestamp>
 
-local socket = require("socket.core") -- BizHawk has LuaSocket
+local socket = require("socket.core")
 local HOST = "127.0.0.1"
 local PORT = 55355
 
@@ -16,28 +24,23 @@ local ROM_DIR = "../roms"
 local SAVE_DIR = "../saves"
 
 console.log("Script starting...")
-console.log("BIZHAWK_IPC_PORT: " .. tostring(PORT))
-console.log("BIZHAWK_ROM_DIR: " .. ROM_DIR)
-console.log("BIZHAWK_SAVE_DIR: " .. SAVE_DIR)
 
-local function now()
-  return socket.gettime()
-end
+local function now() return socket.gettime() end
 
+-- === GUI message system ===
 local function write_to_screen(text, x, y, fontsize, fg, bg)
   gui.use_surface("client")
   gui.drawText(
     x or 10,
     y or 10,
     text,
-    fg or 0xFFFFFFFF, -- default white text
-    bg or 0xFF000000, -- default black background
+    fg or 0xFFFFFFFF,
+    bg or 0xFF000000,
     fontsize or 12
   )
 end
 
--- Active on-screen messages (persisted by re-drawing each frame)
-local messages = {} -- list of { text=..., expires=..., x=..., y=..., fontsize=..., fg=..., bg=... }
+local messages = {} -- list of { text=..., expires=..., ... }
 
 local function show_message(text, duration, x, y, fontsize, fg, bg)
   duration = tonumber(duration) or 3.0
@@ -54,9 +57,7 @@ end
 
 local function draw_messages()
   gui.clearGraphics()
-  if #messages == 0 then
-    return
-  end
+  if #messages == 0 then return end
   gui.use_surface("client")
   local t = now()
   local keep = {}
@@ -65,30 +66,21 @@ local function draw_messages()
     if t < m.expires then
       gui.drawText(m.x, m.y + yoff, m.text, m.fg, m.bg, m.fontsize)
       table.insert(keep, m)
-      yoff = yoff + (m.fontsize + 4) -- stack messages vertically
+      yoff = yoff + (m.fontsize + 4)
     end
   end
   messages = keep
 end
 
+-- === File helpers ===
 local function file_exists(name)
   local f = io.open(name, "r")
-  if f ~= nil then
-    io.close(f)
-    return true
-  else
-    return false
-  end
+  if f ~= nil then io.close(f) return true else return false end
 end
 
-local function save_state(path)
-  savestate.save(path)
-end
-
+local function save_state(path) savestate.save(path) end
 local function load_state_if_exists(path)
-  if file_exists(path) then
-    savestate.load(path)
-  end
+  if file_exists(path) then savestate.load(path) end
 end
 
 local function load_rom(path)
@@ -99,24 +91,16 @@ local function load_rom(path)
   end
 end
 
--- Helpers for ROM naming
+-- === ROM naming helpers ===
 local function get_rom_display_name()
-  if client and client.getromname then
-    return client.getromname()
-  end
-  if gameinfo and gameinfo.getromname then
-    return gameinfo.getromname()
-  end
-  if emu and emu.getromname then
-    return emu.getromname()
-  end
+  if client and client.getromname then return client.getromname() end
+  if gameinfo and gameinfo.getromname then return gameinfo.getromname() end
+  if emu and emu.getromname then return emu.getromname() end
   return nil
 end
 
 local function sanitize_filename(name)
-  if not name then
-    return nil
-  end
+  if not name then return nil end
   name = name:gsub("[/\\:*?\"<>|]", "_")
   name = name:gsub("%s+$", "")
   return name
@@ -126,7 +110,7 @@ local function strip_extension(filename)
   return (filename:gsub("%.[^%.]+$", ""))
 end
 
--- Scheduler
+-- === Scheduler ===
 local pending = {} -- list of { at = <epoch>, fn = function() end }
 
 local function schedule(at_epoch, fn)
@@ -160,96 +144,87 @@ local function schedule_or_now(at_epoch, fn)
   end
 end
 
--- Save current ROM state if valid
+-- === State save/load ===
 local function save_current_if_any()
   local cur = get_rom_display_name()
   cur = sanitize_filename(cur)
-  if not cur or cur == "" or cur:lower() == "null" then
-    return
-  end
+  if not cur or cur == "" or cur:lower() == "null" then return end
   local path = SAVE_DIR .. "/" .. cur .. ".state"
-  local ok, err = pcall(function()
-    save_state(path)
-  end)
+  local ok, err = pcall(function() save_state(path) end)
   if not ok then
     console.log("[ERROR] Failed to save state for '" .. tostring(cur) .. "': " .. tostring(err))
   end
 end
 
--- Command handlers
+-- === Command handlers ===
+local current_game = nil
+
 local function do_swap(target_game)
   save_current_if_any()
-
   local rom_path = ROM_DIR .. "/" .. target_game
   load_rom(rom_path)
-
   local disp = sanitize_filename(get_rom_display_name())
   if not disp or disp == "" or disp:lower() == "null" then
     disp = sanitize_filename(strip_extension(target_game))
   end
-
   local target_save_path = SAVE_DIR .. "/" .. disp .. ".state"
   load_state_if_exists(target_save_path)
 end
 
-local current_game = nil
-
 local function do_start(game)
   client.unpause()
-  if game == current_game then
-    return
-  end
+  if game == current_game then return end
   current_game = game
-
   local rom_path = ROM_DIR .. "/" .. game
   load_rom(rom_path)
-
   local disp = sanitize_filename(get_rom_display_name())
   if not disp or disp == "" or disp:lower() == "null" then
     disp = sanitize_filename(strip_extension(game))
   end
-
   local save_path = SAVE_DIR .. "/" .. disp .. ".state"
   load_state_if_exists(save_path)
 end
 
-local function do_save(path)
-  save_state(path)
-end
+local function do_save(path) save_state(path) end
+local function do_pause() client.pause(); console.log("[INFO] Paused") end
+local function do_resume() client.unpause(); console.log("[INFO] Resumed") end
 
-local function do_pause()
-  client.pause()
-  console.log("[INFO] Simulated pause activated")
-end
-
-local function do_resume()
-  client.unpause()
-  console.log("[INFO] Resumed emulation")
-end
-
--- Socket client (connects to Go server)
+-- === Socket client ===
 local client_socket = nil
 local last_attempt = 0
 
+local function send_line(line)
+  if client_socket then client_socket:send(line .. "\n") end
+end
+
+-- HELLO handshake
+local function send_hello() send_line("HELLO") end
+
+-- ACK/NACK wrapper
+local function safe_exec(id, fn)
+  local ok, err = pcall(fn)
+  if ok then
+    send_line("ACK|" .. id)
+  else
+    send_line("NACK|" .. id .. "|" .. tostring(err))
+  end
+end
+
 local function ensure_connected()
-  if client_socket ~= nil then
-    return
-  end
+  if client_socket ~= nil then return end
   local t = now()
-  if t - last_attempt < 1.0 then
-    return
-  end
+  if t - last_attempt < 1.0 then return end
   last_attempt = t
   local c, err = socket.tcp()
-  if not c then
-    return
-  end
+  if not c then return end
   c:settimeout(0)
   local ok, err2 = c:connect(HOST, PORT)
   client_socket = c
   if not ok and err2 ~= "timeout" then
     client_socket:close()
     client_socket = nil
+  else
+    send_hello()
   end
 end
 
@@ -262,9 +237,7 @@ local function split_pipe(s)
 end
 
 local function join_from(parts, start_index)
-  if not parts[start_index] then
-    return ""
-  end
+  if not parts[start_index] then return "" end
   local s = parts[start_index]
   for i = start_index + 1, #parts do
     s = s .. "|" .. parts[i]
@@ -272,75 +245,73 @@ local function join_from(parts, start_index)
   return s
 end
 
+-- === Read loop ===
 local function read_lines()
-  if not client_socket then
-    return
-  end
+  if not client_socket then return end
   while true do
-    local line, err, partial = client_socket:receive("*l")
+    local line, err = client_socket:receive("*l")
     if line then
       local parts = split_pipe(line)
-      console.log(parts)
-      local cmd = parts[1]
-      if cmd == "SWAP" and #parts >= 3 then
-        local at = tonumber(parts[2])
-        local game = parts[3]
-        schedule_or_now(at, function()
-          do_swap(game)
-        end)
-      elseif cmd == "START" and #parts >= 3 then
-        local at = tonumber(parts[2])
-        local game = parts[3]
-        schedule_or_now(at, function()
-          do_start(game)
-        end)
-      elseif cmd == "SAVE" and #parts >= 2 then
-        local path = parts[2]
-        schedule_or_now(nil, function()
-          do_save(path)
-        end)
-      elseif cmd == "PAUSE" then
-        local at = tonumber(parts[2] or "")
-        schedule_or_now(at, function()
-          do_pause()
-        end)
-      elseif cmd == "RESUME" then
-        local at = tonumber(parts[2] or "")
-        schedule_or_now(at, function()
-          do_resume()
-        end)
-      elseif cmd == "MSG" and #parts >= 2 then
-        -- Support either: MSG|<text>
-        -- or: MSG|<seconds>|<text>
-        local dur = tonumber(parts[2])
-        local text = nil
-        if dur and #parts >= 3 then
-          text = join_from(parts, 3)
+      if parts[1] == "CMD" then
+        local id, cmd = parts[2], parts[3]
+        if cmd == "SWAP" then
+          local at, game = tonumber(parts[4]), parts[5]
+          safe_exec(id, function() schedule_or_now(at, function() do_swap(game) end) end)
+        elseif cmd == "START" then
+          local at, game = tonumber(parts[4]), parts[5]
+          safe_exec(id, function() schedule_or_now(at, function() do_start(game) end) end)
+        elseif cmd == "SAVE" then
+          local path = parts[4]
+          safe_exec(id, function() do_save(path) end)
+        elseif cmd == "PAUSE" then
+          local at = tonumber(parts[4] or "")
+          safe_exec(id, function() schedule_or_now(at, do_pause) end)
+        elseif cmd == "RESUME" then
+          local at = tonumber(parts[4] or "")
+          safe_exec(id, function() schedule_or_now(at, do_resume) end)
+        elseif cmd == "MSG" then
+          local text = join_from(parts, 4)
+          safe_exec(id, function() show_message(text, 3) end)
+        elseif cmd == "SYNC" then
+          local game, paused, start_at = parts[4], tonumber(parts[5] or "0"), tonumber(parts[6] or "0")
+          safe_exec(id, function()
+            if game and game ~= "" then
+              if start_at > 0 then
+                schedule_or_now(start_at, function() do_start(game) end)
+              else
+                do_start(game)
+              end
+            end
+            if paused == 1 then do_pause() else do_resume() end
+            if start_at > 0 then console.log("[SYNC] StartAt: " .. tostring(start_at)) end
+          end)
         else
-          dur = 3.0
-          text = join_from(parts, 2)
+          send_line("NACK|" .. id .. "|Unknown command: " .. tostring(cmd))
         end
-        console.log("[SERVER MESSAGE] " .. tostring(text))
-        show_message(text, dur)
+      elseif parts[1] == "PONG" then
+        -- optional: measure latency
       end
     else
-      if err == "timeout" then
-        break
-      elseif err == "closed" then
-        client_socket:close()
-        client_socket = nil
-        break
-      else
-        break
-      end
+      if err == "timeout" then break end
+      if err == "closed" then client_socket:close(); client_socket = nil; break end
+      break
     end
   end
 end
 
--- Auto-save every 10 seconds
+-- === Heartbeat ===
+local next_ping = now() + 5
+local function heartbeat_tick()
+  local t = now()
+  if t >= next_ping then
+    send_line("PING|" .. tostring(math.floor(t)))
+    next_ping = t + 5
+  end
+end
+
+-- === Auto-save ===
 local AUTO_SAVE_INTERVAL = 10.0
 local next_auto_save = now() + AUTO_SAVE_INTERVAL
-
 local function auto_save_tick()
   local t = now()
   if t >= next_auto_save then
@@ -349,17 +320,14 @@ local function auto_save_tick()
   end
 end
 
--- Main loop
+-- === Main loop ===
 while true do
   ensure_connected()
   read_lines()
   execute_due()
   auto_save_tick()
   draw_messages()
+  heartbeat_tick()
 
-  if client.ispaused() then
-    emu.yield()
-  else
-    emu.frameadvance()
-  end
+  if client.ispaused() then emu.yield() else emu.frameadvance() end
 end

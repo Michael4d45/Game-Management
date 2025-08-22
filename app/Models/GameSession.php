@@ -15,10 +15,11 @@ use Illuminate\Support\Collection;
 /**
  * @property Carbon|null $updated_at
  * @property Carbon|null $created_at
- * @property Carbon|null $start_at
+ * @property Carbon $status_at
  * @property int $current_round
- * @property string|null $status
- * @property int $swap_interval
+ * @property string $status
+ * @property int $swap_interval_min
+ * @property int $swap_interval_max
  * @property GameSessionMode $mode
  * @property int $user_id
  * @property string $name
@@ -31,19 +32,23 @@ use Illuminate\Support\Collection;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Game> $games
  * @property-read int|null $games_count
  * @property-read Collection<string,string> $game_files
+ * @property-read bool $isRunning
  */
 class GameSession extends Model
 {
     protected $fillable = [
         'name',
+        'current_round',
+        'swap_interval_min',
+        'swap_interval_max',
         'user_id',
-        'start_at',
+        'status_at',
         'mode',
         'status',
     ];
 
     protected $casts = [
-        'start_at' => 'datetime',
+        'status_at' => 'datetime',
         'mode' => GameSessionMode::class,
     ];
 
@@ -156,5 +161,15 @@ class GameSession extends Model
         ]);
 
         return null;
+    }
+
+    public function getIsRunningAttribute(): bool
+    {
+        return $this->status === 'running';
+    }
+
+    public function swapTime(): int
+    {
+        return rand($this->swap_interval_min, $this->swap_interval_max);
     }
 }

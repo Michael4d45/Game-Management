@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\GameSessions\Widgets;
 
-use App\Enums\GameSessionMode;
-use App\Models\Game;
+use App\Jobs\ExecuteSessionSwap;
 use App\Models\GameSession;
-use App\Models\SessionPlayer;
-use App\Services\GamePlayerBroadcast;
 use App\Services\GameSessionBroadcast;
+use App\Services\SessionSwapper;
+use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 
 class SessionControlsWidget extends Widget
 {
-    protected string $view = 'filament.resources.game-session-resource.widgets.session-controls';
+    protected string $view =
+        'filament.resources.game-session-resource.widgets.session-controls';
 
     public GameSession|null $record = null;
 
@@ -33,10 +33,17 @@ class SessionControlsWidget extends Widget
         }
 
         $this->record->update([
-            'start_at' => now()->addSeconds($this->startDelay),
+            'status' => 'running',
+            'status_at' => $this->getDelayed(),
         ]);
 
         (new GameSessionBroadcast($this->record))->start();
+
+        // schedule first automatic swap at status_at + swap_interval
+        $firstSwapAt = $this->record->status_at->addSeconds($this->record->swapTime());
+
+        ExecuteSessionSwap::dispatch($this->record->id)
+            ->delay($firstSwapAt);
 
         Notification::make()
             ->title('Game start scheduled')
@@ -51,7 +58,8 @@ class SessionControlsWidget extends Widget
         }
 
         $this->record->update([
-            'start_at' => null,
+            'status' => 'paused',
+            'status_at' => $this->getDelayed(),
         ]);
 
         (new GameSessionBroadcast($this->record))->pause();
@@ -82,34 +90,7 @@ class SessionControlsWidget extends Widget
             return;
         }
 
-        $swapAt = now()->addSeconds(5);
-        $round = $this->record->current_round + 1;
-
-        $this->record->update(['current_round' => $round]);
-
-        foreach ($this->record->players as $player) {
-            switch ($this->record->mode) {
-                case GameSessionMode::SyncList:
-                    (new GamePlayerBroadcast($player))
-                        ->swap(
-                            roundNumber: $round,
-                            swapAt: $swapAt,
-                            newGame: $this->pickNextGame(),
-                            saveUrl: null
-                        );
-                    break;
-                case GameSessionMode::SaveSwap:
-                    $saveUrl = $this->assignSaveForPlayer($player);
-                    (new GamePlayerBroadcast($player))
-                        ->swap(
-                            roundNumber: $round,
-                            swapAt: $swapAt,
-                            newGame: $this->pickNextGameForPlayer($player),
-                            saveUrl: $saveUrl
-                        );
-                    break;
-            }
-        }
+        app(SessionSwapper::class)->performSwap($this->record, $this->getDelayed());
 
         Notification::make()
             ->title('Swap triggered for all players')
@@ -117,22 +98,8 @@ class SessionControlsWidget extends Widget
             ->send();
     }
 
-    protected function pickNextGame(): Game
+    private function getDelayed(): Carbon
     {
-        return Game::firstOrFail();
-    }
-
-    protected function pickNextGameForPlayer(SessionPlayer $player): Game
-    {
-        return Game::firstOrFail();
-    }
-
-    protected function assignSaveForPlayer(SessionPlayer $player): string|null
-    {
-        if (! $this->record) {
-            return null;
-        }
-
-        return url("/saves/{$this->record->id}/{$player->name}.state");
+        return now()->addSeconds($this->startDelay);
     }
 }

@@ -14,8 +14,7 @@ abstract class CommandEvent implements ShouldBroadcast
 
     public function __construct(
         public string $channel,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function broadcastOn(): PrivateChannel
@@ -25,6 +24,7 @@ abstract class CommandEvent implements ShouldBroadcast
             static::class,
             $this->channel
         ));
+
         return new PrivateChannel($this->channel);
     }
 

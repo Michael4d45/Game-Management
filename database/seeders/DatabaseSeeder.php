@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'name' => 'test',
             'mode' => 'sync_list',
+            'status' => 'stopped',
+            'status_at' => now(),
         ]);
 
         $session->games()->attach(

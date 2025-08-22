@@ -7,7 +7,10 @@ namespace App\Services;
 use App\Events\ClearSavesEvent;
 use App\Events\PauseGameEvent;
 use App\Events\StartGameEvent;
+use App\Events\SwapEvent;
+use App\Models\Game;
 use App\Models\GameSession;
+use Carbon\Carbon;
 
 class GameSessionBroadcast
 {
@@ -20,10 +23,7 @@ class GameSessionBroadcast
 
     public function start(): void
     {
-        $startAt = $this->session->start_at;
-        if (! $startAt) {
-            throw new \Exception('Expected start at for session: ' . $this->session->name);
-        }
+        $startAt = $this->session->status_at;
         broadcast(new StartGameEvent(
             channel: $this->channel,
             startAt: $startAt->getTimestamp(),
@@ -41,6 +41,17 @@ class GameSessionBroadcast
     {
         broadcast(new ClearSavesEvent(
             channel: $this->channel,
+        ));
+    }
+
+    public function swap(int $roundNumber, Carbon $swapAt, Game $newGame, string|null $saveUrl = null): void
+    {
+        broadcast(new SwapEvent(
+            channel: $this->channel,
+            roundNumber: $roundNumber,
+            swapAt: $swapAt,
+            newGame: $newGame->file,
+            saveUrl: $saveUrl
         ));
     }
 }
