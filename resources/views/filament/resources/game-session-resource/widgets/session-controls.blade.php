@@ -39,12 +39,12 @@
             </div>
             <div class="mt-2 text-sm text-gray-500">
                 Scheduled to start at
-                <span x-data="{ localTime: '' }" x-init="let dt = new Date('{{ $record->status_at->toIso8601String() }}');
+                <span x-data="{ localTime: '' }" x-init="let dt = new Date('{{ $record->state_at->toIso8601String() }}');
                 localTime = dt.toLocaleTimeString();" x-text="localTime"></span>
             </div>
 
             <div x-data="{
-                startAt: new Date('{{ $record->status_at->toIso8601String() }}'),
+                startAt: new Date('{{ $record->state_at->toIso8601String() }}'),
                 now: new Date(),
                 get elapsed() {
                     let diff = Math.floor((this.now - this.startAt) / 1000);

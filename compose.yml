@@ -1,0 +1,32 @@
+name: "biz"
+
+services:
+  pgsql:
+    restart: unless-stopped
+    image: ivanlonel/postgis-with-extensions:latest
+    container_name: biz-pgsql
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      POSTGRES_DB: "${DB_DATABASE}"
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+  redis:
+      image: redis:alpine
+      container_name: biz-redis
+      restart: unless-stopped
+      ports:
+        - "6379:6379"
+      command: ["redis-server", "--appendonly", "yes"]
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 5s
+        timeout: 3s
+        retries: 30

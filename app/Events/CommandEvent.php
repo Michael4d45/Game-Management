@@ -19,12 +19,6 @@ abstract class CommandEvent implements ShouldBroadcast
     #[\Override]
     public function broadcastOn(): PrivateChannel
     {
-        logger(sprintf(
-            'Event [%s] broadcasting to channel [%s]',
-            static::class,
-            $this->channel
-        ));
-
         return new PrivateChannel($this->channel);
     }
 
@@ -33,10 +27,18 @@ abstract class CommandEvent implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        return [
+        $data = [
             'type' => $this->getType(),
             'payload' => $this->getPayload(),
         ];
+
+        logger(sprintf(
+            'Event [%s] broadcasting to channel [%s]',
+            static::class,
+            $this->channel
+        ), $data);
+
+        return $data;
     }
 
     public function broadcastAs(): string

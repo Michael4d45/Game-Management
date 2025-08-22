@@ -30,9 +30,28 @@ class DatabaseSeeder extends Seeder
             }
         }
         foreach ($existingFiles as $filename) {
-            Game::firstOrCreate([
-                'file' => $filename,
-            ]);
+            // Special handling for .bin files: skip them
+            if (str_ends_with($filename, '.bin')) {
+                continue;
+            }
+
+            // Special handling for .cue files: attach matching .bin if it exists
+            if (str_ends_with($filename, '.cue')) {
+                $binFile = preg_replace('/\.cue$/i', '.bin', $filename);
+
+                Game::firstOrCreate(
+                    ['file' => $filename],
+                    ['extra_file' => in_array($binFile, $existingFiles) ? $binFile : null]
+                );
+
+                continue;
+            }
+
+            // Default case: just create the record with no extra_file
+            Game::firstOrCreate(
+                ['file' => $filename],
+                ['extra_file' => null]
+            );
         }
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -43,8 +62,8 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'name' => 'test',
             'mode' => 'sync_list',
-            'status' => 'stopped',
-            'status_at' => now(),
+            'state' => 'stopped',
+            'state_at' => now(),
         ]);
 
         $session->games()->attach(

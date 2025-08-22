@@ -33,14 +33,14 @@ class SessionControlsWidget extends Widget
         }
 
         $this->record->update([
-            'status' => 'running',
-            'status_at' => $this->getDelayed(),
+            'state' => 'running',
+            'state_at' => $this->getDelayed(),
         ]);
 
-        (new GameSessionBroadcast($this->record))->start();
+        (new GameSessionBroadcast($this->record))->stateChange();
 
-        // schedule first automatic swap at status_at + swap_interval
-        $firstSwapAt = $this->record->status_at->addSeconds($this->record->swapTime());
+        // schedule first automatic swap at state_at + swap_interval
+        $firstSwapAt = $this->record->state_at->addSeconds($this->record->swapTime());
 
         ExecuteSessionSwap::dispatch($this->record->id)
             ->delay($firstSwapAt);
@@ -58,11 +58,11 @@ class SessionControlsWidget extends Widget
         }
 
         $this->record->update([
-            'status' => 'paused',
-            'status_at' => $this->getDelayed(),
+            'state' => 'paused',
+            'state_at' => $this->getDelayed(),
         ]);
 
-        (new GameSessionBroadcast($this->record))->pause();
+        (new GameSessionBroadcast($this->record))->stateChange();
 
         Notification::make()
             ->title('Game paused')

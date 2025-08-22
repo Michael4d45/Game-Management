@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\GameSessionMode;
+use App\Jobs\RetryUnackedSwaps;
 use App\Models\GameSession;
 use App\Models\GameSwap;
 use Carbon\Carbon;
@@ -26,7 +27,7 @@ class SessionSwapper
             case GameSessionMode::SyncList:
                 $newGame = $session->games->random();
                 foreach ($session->players as $player) {
-                    GameSwap::create([
+                    $swap = GameSwap::create([
                         'game_session_id' => $session->id,
                         'initiated_by' => auth()->id() ?? 'system',
                         'round_number' => $roundNumber,
@@ -34,10 +35,17 @@ class SessionSwapper
                         'session_player_name' => $player->name,
                         'game_file' => $newGame->file,
                     ]);
+                    if ($player->is_connected) {
+                        RetryUnackedSwaps::dispatch($swap->id)->delay(now()->addSeconds(2));
+                    }
                 }
                 (new GameSessionBroadcast($session))
-                    ->swap(roundNumber: $roundNumber, swapAt: $swapAt,
-                        newGame: $newGame, saveUrl: null);
+                    ->swap(
+                        roundNumber: $roundNumber,
+                        swapAt: $swapAt,
+                        newGame: $newGame,
+                        saveUrl: null
+                    );
                 break;
 
             case GameSessionMode::SaveSwap:
@@ -45,7 +53,7 @@ class SessionSwapper
                     $newGame = $session->chooseStartGameFor($player)
                                ?? $session->games->random();
                     $saveUrl = url("/saves/{$session->id}/{$player->name}.state");
-                    GameSwap::create([
+                    $swap = GameSwap::create([
                         'game_session_id' => $session->id,
                         'initiated_by' => auth()->id() ?? 'system',
                         'round_number' => $roundNumber,
@@ -54,10 +62,17 @@ class SessionSwapper
                         'game_file' => $newGame->file,
                         'save_state_path' => $saveUrl,
                     ]);
+                    if ($player->is_connected) {
+                        RetryUnackedSwaps::dispatch($swap->id)->delay(now()->addSeconds(2));
 
-                    (new GamePlayerBroadcast($player))
-                        ->swap(roundNumber: $roundNumber, swapAt: $swapAt,
-                            newGame: $newGame, saveUrl: $saveUrl);
+                        (new GamePlayerBroadcast($player))
+                            ->swap(
+                                roundNumber: $roundNumber,
+                                swapAt: $swapAt,
+                                newGame: $newGame,
+                                saveUrl: $saveUrl
+                            );
+                    }
                 }
                 break;
         }

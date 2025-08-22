@@ -15,9 +15,9 @@ use Illuminate\Support\Collection;
 /**
  * @property Carbon|null $updated_at
  * @property Carbon|null $created_at
- * @property Carbon $status_at
+ * @property Carbon $state_at
  * @property int $current_round
- * @property string $status
+ * @property string $state
  * @property int $swap_interval_min
  * @property int $swap_interval_max
  * @property GameSessionMode $mode
@@ -42,13 +42,13 @@ class GameSession extends Model
         'swap_interval_min',
         'swap_interval_max',
         'user_id',
-        'status_at',
+        'state_at',
         'mode',
-        'status',
+        'state',
     ];
 
     protected $casts = [
-        'status_at' => 'datetime',
+        'state_at' => 'datetime',
         'mode' => GameSessionMode::class,
     ];
 
@@ -165,7 +165,7 @@ class GameSession extends Model
 
     public function getIsRunningAttribute(): bool
     {
-        return $this->status === 'running';
+        return $this->state === 'running';
     }
 
     public function swapTime(): int

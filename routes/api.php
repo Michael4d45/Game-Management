@@ -32,7 +32,7 @@ Route::post('/upload-save', function (Request $request) {
     );
 
     return response()->json([
-        'status' => 'ok',
+        'state' => 'ok',
         'path' => url("storage/$path"),
     ]);
 });
@@ -191,7 +191,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
             'is_connected' => true,
         ]);
 
-        return response()->json(['status' => 'ok']);
+        return response()->json(['state' => 'ok']);
     });
 
     // Ready state (Phase 1)
@@ -201,14 +201,19 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         $player->update(['is_ready' => true]);
         $session = $player->gameSession;
 
-        $currentGame = $session?->chooseStartGameFor($player)?->file;
+        if ($session === null) {
+            throw new \Exception("Expected game session");
+        }
+
+        $currentGame = $session->chooseStartGameFor($player)?->file;
         $player->update([
             'game_file' => $currentGame,
         ]);
 
         return response()->json([
             'game_file' => $currentGame,
-            'start_at' => $session?->isRunning ? $session->status_at->getTimestamp() : null,
+            'state' => $session->state,
+            'state_at' => $session->state_at->getTimestamp(),
         ]);
     });
 
@@ -226,6 +231,6 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
             ->where('round_number', $request->integer('round_number'))
             ->update(['executed_at' => now()]);
 
-        return response()->json(['status' => 'ok']);
+        return response()->json(['state' => 'ok']);
     });
 });

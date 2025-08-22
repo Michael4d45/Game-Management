@@ -252,38 +252,28 @@ local function read_lines()
     local line, err = client_socket:receive("*l")
     if line then
       local parts = split_pipe(line)
+      console.log(parts)
       if parts[1] == "CMD" then
         local id, cmd = parts[2], parts[3]
         if cmd == "SWAP" then
           local at, game = tonumber(parts[4]), parts[5]
           safe_exec(id, function() schedule_or_now(at, function() do_swap(game) end) end)
-        elseif cmd == "START" then
-          local at, game = tonumber(parts[4]), parts[5]
-          safe_exec(id, function() schedule_or_now(at, function() do_start(game) end) end)
         elseif cmd == "SAVE" then
           local path = parts[4]
           safe_exec(id, function() do_save(path) end)
-        elseif cmd == "PAUSE" then
-          local at = tonumber(parts[4] or "")
-          safe_exec(id, function() schedule_or_now(at, do_pause) end)
-        elseif cmd == "RESUME" then
-          local at = tonumber(parts[4] or "")
-          safe_exec(id, function() schedule_or_now(at, do_resume) end)
         elseif cmd == "MSG" then
           local text = join_from(parts, 4)
           safe_exec(id, function() show_message(text, 3) end)
         elseif cmd == "SYNC" then
-          local game, paused, start_at = parts[4], tonumber(parts[5] or "0"), tonumber(parts[6] or "0")
+          local game, state, state_at = parts[4], parts[5], tonumber(parts[6] or "0")
           safe_exec(id, function()
-            if game and game ~= "" then
-              if start_at > 0 then
-                schedule_or_now(start_at, function() do_start(game) end)
-              else
-                do_start(game)
+            if state == "running" then
+              if game and game ~= "" then
+                schedule_or_now(state_at, function() do_start(game) end)
               end
+            else
+              schedule_or_now(state_at, do_pause)
             end
-            if paused == 1 then do_pause() else do_resume() end
-            if start_at > 0 then console.log("[SYNC] StartAt: " .. tostring(start_at)) end
           end)
         else
           send_line("NACK|" .. id .. "|Unknown command: " .. tostring(cmd))

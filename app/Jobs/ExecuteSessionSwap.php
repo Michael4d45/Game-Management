@@ -39,7 +39,7 @@ class ExecuteSessionSwap implements ShouldQueue
                 return;
             }
 
-            $nextSwapAt = $session->status_at->copy()
+            $nextSwapAt = $session->state_at->copy()
                 ->addSeconds(($session->current_round + 1) * $session->swapTime());
 
             $session->refresh();

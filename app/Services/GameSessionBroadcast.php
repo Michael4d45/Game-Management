@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ChangeGameStateEvent;
 use App\Events\ClearSavesEvent;
-use App\Events\PauseGameEvent;
-use App\Events\StartGameEvent;
 use App\Events\SwapEvent;
 use App\Models\Game;
 use App\Models\GameSession;
@@ -21,19 +20,12 @@ class GameSessionBroadcast
         $this->channel = "session.{$session->name}";
     }
 
-    public function start(): void
+    public function stateChange(): void
     {
-        $startAt = $this->session->status_at;
-        broadcast(new StartGameEvent(
+        broadcast(new ChangeGameStateEvent(
             channel: $this->channel,
-            startAt: $startAt->getTimestamp(),
-        ));
-    }
-
-    public function pause(): void
-    {
-        broadcast(new PauseGameEvent(
-            channel: $this->channel,
+            state: $this->session->state,
+            stateAt: $this->session->state_at->getTimestamp(),
         ));
     }
 

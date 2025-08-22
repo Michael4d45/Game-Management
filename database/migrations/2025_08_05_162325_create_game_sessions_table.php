@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\Query\Expression;
-use App\Models\Game;
 use App\Models\GameSession;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,15 +23,19 @@ return new class extends Migration
             $table->enum('mode', ['sync_list', 'save_swap']);
             $table->integer('swap_interval_min')->default(5); // seconds
             $table->integer('swap_interval_max')->default(10); // seconds
-            $table->string('status')->default('stopped');
+            $table->string('state')->default('stopped');
             $table->integer('current_round')->default(0);
-            $table->timestampTz('status_at')->default(new Expression('CURRENT_TIMESTAMP'));
+            $table->timestampTz('state_at')->default(new Expression('CURRENT_TIMESTAMP'));
             $table->timestamps();
         });
 
         Schema::create('session_games', function (Blueprint $table): void {
             $table->foreignIdFor(GameSession::class)->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(Game::class)->constrained()->cascadeOnDelete();
+            $table->string('game_file');
+            $table->foreign('game_file')
+                ->references('file')
+                ->on('games')
+                ->cascadeOnDelete();
         });
     }
 

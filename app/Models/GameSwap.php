@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $game_session_id
  * @property int $id
  * @property-read GameSession $gameSession
+ * @property-read Game $game
  * @property-read SessionPlayer $sessionPlayer
  */
 class GameSwap extends Model
@@ -55,5 +56,13 @@ class GameSwap extends Model
     public function sessionPlayer()
     {
         return $this->belongsTo(SessionPlayer::class);
+    }
+
+    /**
+     * @return BelongsTo<Game,$this>
+     */
+    public function game()
+    {
+        return $this->belongsTo(Game::class);
     }
 }

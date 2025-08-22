@@ -22,7 +22,11 @@ return new class extends Migration
             $table->integer('ping')->nullable();
             $table->boolean('is_ready')->default(false);
             $table->boolean('is_connected')->default(true);
-            $table->foreignIdFor(Game::class)->nullable();
+            $table->string('game_file')->nullable();
+            $table->foreign('game_file')
+                ->references('file')
+                ->on('games')
+                ->cascadeOnDelete();
             $table->timestamp('last_seen')->nullable();
             $table->string('timezone')->nullable();
             $table->float('swap_offset')->nullable();

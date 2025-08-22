@@ -4,24 +4,26 @@ declare(strict_types=1);
 
 namespace App\Events;
 
-class StartGameEvent extends CommandEvent
+class ChangeGameStateEvent extends CommandEvent
 {
     public function __construct(
         public string $channel,
-        public int $startAt,
+        public string $state,
+        public int $stateAt,
     ) {}
 
     #[\Override]
     public function getPayload(): array
     {
         return [
-            'start_time' => $this->startAt,
+            'state' => $this->state,
+            'state_at' => $this->stateAt,
         ];
     }
 
     #[\Override]
     public function getType(): string
     {
-        return 'start_game';
+        return 'change_game_state';
     }
 }
